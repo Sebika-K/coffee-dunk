@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coffee Dunk ☕</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body class="landing-page">
+    <div class="container">
+      <img
+        src="{{ url_for('static', filename='assets/dump-logo.png') }}"
+        alt="coffee dump logo"
+        class="logo"
+      />
+
+      <div class="bottom-links">
+        <p>Already have an account? <a href="/login">Login</a></p>
+        <p>Don't have an account? <a href="/signup">Sign Up</a></p>
+      </div>
+    </div>
+  </body>
+</html>
