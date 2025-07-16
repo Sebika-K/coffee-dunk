@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Coffee Dump</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/login.css') }}"
+    />
+  </head>
+  <body class="login-page">
+    <div class="login-card">
+      <form class="login-box">
+        <input
+          type="text"
+          class="login-input username"
+          placeholder="Username"
+          required
+        />
+        <input
+          type="password"
+          class="login-input password"
+          placeholder="Password"
+          required
+        />
+
+        <div class="login-options">
+          <label><input type="checkbox" />Remember Me</label>
+          <a href="forgot">Forgot Password?</a>
+        </div>
+        <button type="submit">Login</button>
+        <p class="signup-link">
+          Don't have an account? <a href="/signup">Sign Up</a>
+        </p>
+      </form>
+    </div>
+  </body>
+</html>
