@@ -1,5 +1,12 @@
 body.login-page {
-  background-color: #CBA781;
+  background-image: url('/static/assets/background_screen.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
   font-family: 'Inter', sans-serif;
 }
 .login-card {
@@ -68,9 +75,9 @@ body.login-page {
 }
 
 .login-options a {
-  
   text-decoration: underline;
   font-size: 14px;
+  
 }
 .login-options input[type="checkbox"] {
   width: 16px;
