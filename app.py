@@ -52,8 +52,8 @@ def results():
     ]
 
     # 🔹 Sort cafes by rating ascending
-    cafes.sort(key=lambda c: c['rating'])
+    sorted_cafes = sorted(cafes, key=lambda x: x['rating'], reverse = True)
 
-    return render_template('results.html', city=city, cafes=cafes)
+    return render_template('results.html', cafes= sorted_cafes)
 if __name__ == '__main__':
     app.run(debug=True)
