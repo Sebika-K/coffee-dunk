@@ -5,9 +5,15 @@
 }
 
 body.landing-page {
-  background-color: #D2A679;
-  font-family: 'Arial', sans-serif;
+  background-image: url('/static/assets/landing_screen.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -22,12 +28,6 @@ body.landing-page {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-}
-
-.logo {
-  width: 418px;
-  height: 292px;
-  margin-bottom: 40px;
 }
 
 .bottom-links {
