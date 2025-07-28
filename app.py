@@ -22,7 +22,7 @@ def search():
 def results():
     city = request.args.get('city', 'austin')
 
-    # 🔸 Mock Data for Cafés
+    # Mock Data for Cafés
     cafes = [
         {
             'name': "Mozart's",
@@ -51,7 +51,7 @@ def results():
         }
     ]
 
-    # 🔹 Sort cafes by rating ascending
+    # Sort cafes by rating descending
     sorted_cafes = sorted(cafes, key=lambda x: x['rating'], reverse = True)
 
     return render_template('results.html', cafes= sorted_cafes)

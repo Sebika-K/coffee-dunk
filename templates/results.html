@@ -14,15 +14,34 @@
     />
   </head>
   <body class="results-page">
-    <h2>Coffee in {{ city|capitalize }}</h2>
+    <div class="navbar">
+      <div class="location-group">
+        <input
+          class="city-box"
+          id="city-input"
+          type="text"
+          value="{{ city|capitalize }}"
+          placeholder="Enter city"
+        />
+        <button class="icon-button" onclick="searchCity()">🔍</button>
+      </div>
+
+      <input type="number" class="radius-box" placeholder="Custom Radius" />
+    </div>
 
     <div class="gallery">
       {% for cafe in cafes %}
-      <div class="cafe-card">
-        <img src="{{ cafe.image_url }}" alt="coffee pic" />
-        <p class="cafe-name">{{ cafe.name }}</p>
-        <p class="cafe-rating">{{ cafe.rating }} ⭐</p>
-      </div>
+      <a
+        href="/cafe/{{ cafe.name | replace(' ', '') | lower }}"
+        class="card-link"
+      >
+        <div class="cafe-card">
+          <img src="{{ cafe.image_url }}" alt="coffee pic" />
+          <p class="cafe-name">{{ cafe.name }}</p>
+          <p class="cafe-rating">{{ cafe.rating }} ⭐</p>
+        </div>
+      </a>
+
       {% endfor %}
     </div>
   </body>
