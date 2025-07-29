@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ cafe_name | capitalize }} - Details</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/cafe-detail.css') }}"
+    />
+  </head>
+  <body class="cafe-detail-page">
+    <a href="/results" class="back-button"> &#8592; </a>
+    <div class="cafe-header">
+      <h2>~ {{ cafe_name | capitalize}} ~</h2>
+    </div>
+
+    <div class="posts-grid">
+      {% for post in uploads %}
+      <div
+        class="post-card"
+        onclick="openModal(this)"
+        data-image="{{ post.image_url }}"
+        data-caption="{{ post.caption }}"
+        data-rating="{{ post.rating }}"
+        data-user="{{ post.user }}"
+        data-avatar="{{ post.user_avatar }}"
+      >
+        <img src="{{ post.image_url }}" alt="coffee post" />
+      </div>
+      {% endfor %}
+    </div>
+    <div class="modal" id="postModal">
+      <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">×</span>
+        <img id="modalImage" />
+        <div class="modal-user">
+          <img id="modalAvatar" class="avatar" />
+          <span id="modalUsername" class="username"></span>
+        </div>
+        <p id="modalCaption" class="caption"></p>
+        <p id="modalRating" class="rating"></p>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/cafe-detail.js') }}"></script>
+  </body>
+</html>
