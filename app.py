@@ -20,6 +20,8 @@ def search():
 
 @app.route('/cafe/<cafe_name>')
 def cafe_detail(cafe_name):
+    
+
     # Mock user uploads for now
     uploads = [
         {
@@ -35,10 +37,72 @@ def cafe_detail(cafe_name):
             'rating': 4.5,
             'user': 'johnnybeans',
             'user_avatar': '/static/profiles/johny.jpg'
+        },
+        {
+            'image_url': '/static/uploads/mozar2.jpg',
+            'caption': 'Cute interior!',
+            'rating': 4.5,
+            'user': 'johnnybeans',
+            'user_avatar': '/static/profiles/johny.jpg'
+        },
+        {
+            'image_url': '/static/uploads/mozar2.jpg',
+            'caption': 'Cute interior!',
+            'rating': 4.5,
+            'user': 'johnnybeans',
+            'user_avatar': '/static/profiles/johny.jpg'
+        },
+        {
+            'image_url': '/static/uploads/mozar2.jpg',
+            'caption': 'Cute interior!',
+            'rating': 4.5,
+            'user': 'johnnybeans',
+            'user_avatar': '/static/profiles/johny.jpg'
+        },
+        {
+            'image_url': '/static/uploads/mozar2.jpg',
+            'caption': 'Cute interior!',
+            'rating': 4.5,
+            'user': 'johnnybeans',
+            'user_avatar': '/static/profiles/johny.jpg'
+        },
+        {
+            'image_url': '/static/uploads/mozar2.jpg',
+            'caption': 'Cute interior!',
+            'rating': 4.5,
+            'user': 'johnnybeans',
+            'user_avatar': '/static/profiles/johny.jpg'
+        },
+        {
+            'image_url': '/static/uploads/mozar2.jpg',
+            'caption': 'Cute interior!',
+            'rating': 4.5,
+            'user': 'johnnybeans',
+            'user_avatar': '/static/profiles/johny.jpg'
+        },
+        {
+            'image_url': '/static/uploads/mozar2.jpg',
+            'caption': 'Cute interior!',
+            'rating': 4.5,
+            'user': 'johnnybeans',
+            'user_avatar': '/static/profiles/johny.jpg'
         }
     ]
 
     return render_template('cafe_detail.html', cafe_name=cafe_name, uploads=uploads)
+
+
+@app.route('/profile')
+def profile():
+    posts = [
+        {'image_url': '/static/uploads/mozar1.jpg'},
+        {'image_url': '/static/uploads/mozar1.jpg'},
+        {'image_url': '/static/uploads/mozar1.jpg'},
+        {'image_url': '/static/uploads/mozar1.jpg'},
+        {'image_url': '/static/uploads/mozar1.jpg'},
+        {'image_url': '/static/uploads/mozar1.jpg'},
+    ]
+    return render_template('profile.html', posts=posts)
 
 @app.route('/results')
 def results():

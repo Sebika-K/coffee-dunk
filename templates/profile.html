@@ -1,0 +1,46 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Coffee Dump</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/profile.css') }}"
+    />
+  </head>
+  <body class="profile-page">
+    <div class="top-bar">
+      <span class="username">{{ username or 'Sebikas coffee diary' }}</span>
+      <button class="menu-btn">☰</button>
+    </div>
+    <div class="profile-header">
+      <div class="profile-pic">
+        <img src="/static/uploads/mozar2.jpg" alt="Profile Picture" />
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <span class="number">{{ posts|length }}</span>
+          <span class="label">POSTS</span>
+        </div>
+        <div class="stat">
+          <span class="number">{{ posts|length * 2 }}</span>
+          <span class="label">SCORE</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="bio">Just my regular dose of supplement.</p>
+
+    <div class="posts-grid">
+      {% for post in posts %}
+      <a href="/post/{{ post.id }}" class="post-card">
+        <img src="{{ post.image_url }}" alt="User Post" />
+      </ain>
+      {% endfor %}
+    </div>
+  </body>
+</html>
