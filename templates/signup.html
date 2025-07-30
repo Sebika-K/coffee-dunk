@@ -15,22 +15,25 @@
   </head>
   <body class="signup-page">
     <div class="signup-card">
-      <form class="signup-box">
+      <form class="signup-box" id="signup-form">
         <input
           type="email"
           class="signup-input email"
+          id="signup-email"
           placeholder="Email"
           required
         />
         <input
           type="text"
           class="signup-input username"
+          id="signup-username"
           placeholder="Username"
           required
         />
         <input
           type="password"
           class="signup-input password"
+          id="signup-password"
           placeholder="Password"
           required
         />
@@ -41,5 +44,7 @@
         </p>
       </form>
     </div>
+    <script type="module" src="/static/js/firebase-init.js"></script>
+    <script type="module" src="/static/js/auth.js"></script>
   </body>
 </html>

@@ -15,16 +15,18 @@
   </head>
   <body class="login-page">
     <div class="login-card">
-      <form class="login-box">
+      <form class="login-box" id="login-form">
         <input
-          type="text"
-          class="login-input username"
-          placeholder="Username"
+          type="email"
+          class="login-input email"
+          id="login-email"
+          placeholder="Email"
           required
         />
         <input
           type="password"
           class="login-input password"
+          id="login-password"
           placeholder="Password"
           required
         />
@@ -39,5 +41,7 @@
         </p>
       </form>
     </div>
+    <script type="module" src="/static/js/firebase-init.js"></script>
+    <script type="module" src="/static/js/auth.js"></script>
   </body>
 </html>
