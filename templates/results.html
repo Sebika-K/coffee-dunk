@@ -38,7 +38,10 @@
 
     <div class="gallery">
       {% for cafe in cafes %}
-      <a href="/cafe/{{ cafe.name | urlencode }}" class="card-link">
+      <a
+        href="/cafe/{{ cafe.place_id }}?name={{ cafe.name | urlencode }}"
+        class="card-link"
+      >
         <div class="cafe-card">
           <img src="{{ cafe.image_url }}" alt="coffee pic" />
           <p class="cafe-name">{{ cafe.name }}</p>

@@ -1,6 +1,7 @@
 import os
 import requests
 from flask import Blueprint, render_template, request
+from .firebase_helpers import get_posts_by_place_id
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -36,7 +37,8 @@ def results():
                 cafes.append({
                     'name': place['name'],
                     'rating': place.get('rating', 'N/A'),
-                    'image_url': get_place_photo(place)
+                    'image_url': get_place_photo(place),
+                    'place_id': place['place_id']
                 })
     # Sort cafes by rating (descending)
     sorted_cafes = sorted(
@@ -53,3 +55,10 @@ def get_place_photo(place):
         photo_ref = photos[0]['photo_reference']
         return f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={photo_ref}&key={GOOGLE_API_KEY}"
     return "/static/images/placeholder.jpg"
+
+
+@cafe_bp.route("/cafe/<place_id>")
+def cafe_detail(place_id):
+    cafe_name = request.args.get("name", "")
+    uploads = get_posts_by_place_id(place_id)
+    return render_template("cafe_detail.html", cafe_name=cafe_name, uploads=uploads)
