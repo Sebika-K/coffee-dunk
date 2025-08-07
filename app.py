@@ -1,6 +1,14 @@
 from flask import Flask, render_template, request 
+from dotenv import load_dotenv
+from routes.cafe_routes import cafe_bp
+import os
+
+load_dotenv()  
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 
 app = Flask(__name__)
+
+app.register_blueprint(cafe_bp)
 
 @app.route('/')
 def home():
@@ -104,42 +112,6 @@ def profile():
     ]
     return render_template('profile.html', posts=posts)
 
-@app.route('/results')
-def results():
-    city = request.args.get('city', 'austin')
 
-    # Mock Data for Cafés
-    cafes = [
-        {
-            'name': "Mozart's",
-            'rating': 4.8,
-            'image_url': "/static/images/mozart.jpg"
-        },
-        {
-            'name': "Summer Moon",
-            'rating': 4.6,
-            'image_url': "/static/images/summermoon.jpg"
-        },
-        {
-            'name': "Figure 8 Cafe",
-            'rating': 4.0,
-            'image_url': "/static/images/figure8.jpg"
-        },
-        {
-            'name': "Epoch Coffee",
-            'rating': 3.8,
-            'image_url': "/static/images/epoch.jpg"
-        },
-        {
-            'name': "Houndstooth",
-            'rating': 3.5,
-            'image_url': "/static/images/houndstooth.jpg"
-        }
-    ]
-
-    # Sort cafes by rating descending
-    sorted_cafes = sorted(cafes, key=lambda x: x['rating'], reverse = True)
-
-    return render_template('results.html', cafes= sorted_cafes)
 if __name__ == '__main__':
     app.run(debug=True)
