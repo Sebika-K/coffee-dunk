@@ -1,6 +1,6 @@
 import os
 import requests
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, jsonify
 from .firebase_helpers import get_posts_by_place_id
 from dotenv import load_dotenv
 
@@ -57,8 +57,40 @@ def get_place_photo(place):
     return "/static/images/placeholder.jpg"
 
 
-@cafe_bp.route("/cafe/<place_id>")
-def cafe_detail(place_id):
-    cafe_name = request.args.get("name", "")
-    uploads = get_posts_by_place_id(place_id)
-    return render_template("cafe_detail.html", cafe_name=cafe_name, uploads=uploads)
+@cafe_bp.route("/api/cafes/search")
+def api_cafe_search():
+    """
+    Server-side proxy to Google Places Text Search so the client
+    can find cafés by name/city. Returns a small, clean JSON list.
+    """
+    q = (request.args.get("q") or "").strip()
+    if not q:
+        return jsonify({"error": "Missing query ?q=..."}), 400
+
+    try:
+        url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+        params = {
+            "query": q,           
+            "type": "cafe",       
+            "keyword": "coffee",  # bias toward coffee
+            "key": GOOGLE_API_KEY
+        }
+        resp = requests.get(url, params=params, timeout=10)
+        data = resp.json()
+
+        results = []
+        for p in data.get("results", []):
+            results.append({
+                "name": p.get("name"),
+                "place_id": p.get("place_id"),
+                "address": p.get("formatted_address"),
+                "rating": p.get("rating"),
+            })
+
+        return jsonify({
+            "status": data.get("status"),
+            "results": results
+        })
+
+    except requests.RequestException as e:
+        return jsonify({"error": "Upstream request failed", "detail": str(e)}), 502
