@@ -7,6 +7,13 @@ const clearBtn       = document.getElementById('clearCafe');
 const placeIdInput   = document.getElementById('placeIdInput');
 const cafeNameInput  = document.getElementById('cafeNameInput');
 
+const uploadForm  = document.getElementById('uploadForm');
+const imageInput  = document.getElementById('imageInput');
+const imagePreview= document.getElementById('imagePreview');
+const ratingInput = document.getElementById('ratingInput');
+
+const postBtn     = uploadForm?.querySelector('button[type="submit"]');
+
 async function searchCafes() {
   const q = (qInput?.value || '').trim();
   resultsEl.innerHTML = '';
@@ -63,16 +70,14 @@ function pickCafe(placeId, name) {
 
   chosenWrap.style.display = 'block';
   resultsEl.innerHTML = '';
-
-  // Plan to disable the Post button until cafe is selected
-  // validateCanPost();
+  validateCanPost();
 }
 
 function clearChosenCafe() {
   placeIdInput.value  = '';
   cafeNameInput.value = '';
   chosenWrap.style.display = 'none';
-  // validateCanPost();
+  validateCanPost();
 }
 
 // Hook up events
@@ -84,3 +89,41 @@ qInput?.addEventListener('keydown', (e) => {
   }
 });
 clearBtn?.addEventListener('click', clearChosenCafe);
+
+
+function validateCanPost() {
+  const hasPlace  = !!(placeIdInput && placeIdInput.value);
+  const hasImage  = !!(imageInput && imageInput.files && imageInput.files[0]);
+  const r         = Number((ratingInput?.value || '').trim());
+  const ratingOK  = Number.isFinite(r) && r >= 1 && r <= 5;
+
+  if (postBtn) postBtn.disabled = !(hasPlace && hasImage && ratingOK);
+}
+
+// Preview image + revalidate when user picks a file
+imageInput?.addEventListener('change', () => {
+  if (imageInput.files && imageInput.files[0]) {
+    const url = URL.createObjectURL(imageInput.files[0]);
+    imagePreview.src = url;
+    imagePreview.style.display = 'block';
+  } else {
+    imagePreview.removeAttribute('src');
+    imagePreview.style.display = 'none';
+  }
+  validateCanPost();
+});
+
+// Revalidate when rating changes
+ratingInput?.addEventListener('input', validateCanPost);
+
+// Safety: block submit if invalid
+uploadForm?.addEventListener('submit', (e) => {
+  validateCanPost();
+  if (postBtn && postBtn.disabled) {
+    e.preventDefault();
+    alert('Please select a café, choose an image, and enter a rating (1–5).');
+  }
+});
+
+// Initial state
+validateCanPost();
