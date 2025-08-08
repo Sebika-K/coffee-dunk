@@ -1,3 +1,16 @@
+import { app, auth, db, storage } from '/static/js/firebase-init.js';
+import {
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL
+} from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-storage.js';
+import {
+  collection,
+  addDoc,
+  serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
+
+
 const qInput         = document.getElementById('cafeQuery');
 const searchBtn      = document.getElementById('cafeSearchBtn');
 const resultsEl      = document.getElementById('cafeResults');
@@ -11,6 +24,8 @@ const uploadForm  = document.getElementById('uploadForm');
 const imageInput  = document.getElementById('imageInput');
 const imagePreview= document.getElementById('imagePreview');
 const ratingInput = document.getElementById('ratingInput');
+const captionInput = document.getElementById('captionInput');
+
 
 const postBtn     = uploadForm?.querySelector('button[type="submit"]');
 
@@ -127,3 +142,57 @@ uploadForm?.addEventListener('submit', (e) => {
 
 // Initial state
 validateCanPost();
+
+
+uploadForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  validateCanPost();
+  if (postBtn?.disabled) return;
+
+  // Gather fields
+  const file      = imageInput.files[0];
+  const caption   = (captionInput?.value || '').trim();
+  const ratingNum = Number(ratingInput?.value);
+  const placeId   = placeIdInput?.value || '';
+  const cafeName  = cafeNameInput?.value || '';
+  const uid       = auth.currentUser?.uid || 'anon';
+
+  if (!file || !placeId || !ratingNum) {
+    alert('Missing required info.');
+    return;
+  }
+
+  // Disable button while working
+  postBtn.disabled = true;
+  postBtn.textContent = 'Posting...';
+
+  try {
+    // 1) Upload to Storage
+    const path = `uploads/${uid}/${Date.now()}_${file.name}`;
+    const fileRef = storageRef(storage, path);
+    await uploadBytes(fileRef, file);
+    const downloadURL = await getDownloadURL(fileRef);
+
+    // 2) Write Firestore doc
+    await addDoc(collection(db, 'uploads'), {
+      image_url:  downloadURL,
+      caption:    caption,
+      rating:     ratingNum,
+      place_id:   placeId,
+      cafe_name:  cafeName,
+      user_id:    uid,
+      created_at: serverTimestamp()
+    });
+
+    // 3) Redirect 
+    // window.location.href = `/cafe/${encodeURIComponent(placeId)}?name=${encodeURIComponent(cafeName)}`;
+    window.location.href = '/profile';
+
+  } catch (err) {
+    console.error(err);
+    alert('Upload failed: ' + err.message);
+    postBtn.disabled = false;
+    postBtn.textContent = 'Post';
+    return;
+  }
+});
