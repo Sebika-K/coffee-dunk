@@ -1,0 +1,48 @@
+.upload-container {
+  max-width: 400px;
+  margin: 30px auto;
+  padding: 20px;
+  background: #fff7f0;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.upload-container h2 {
+  text-align: center;
+  color: #5c2a2a;
+}
+
+.upload-container input,
+.upload-container textarea,
+.upload-container button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+.upload-container .cafe-row { 
+  display: flex; 
+  gap: 8px; 
+  margin-top: 6px; 
+}
+
+.upload-container .cafe-row input { 
+  flex: 1; 
+  width: auto;      
+}
+
+.upload-container .cafe-row button { 
+  flex: 0 0 120px;  
+  width: auto;     
+}
+
+.upload-container button {
+  background-color: #5c2a2a;
+  color: white;
+  font-weight: bold;
+}
+.upload-container .cafe-row input,
+.upload-container .cafe-row button { width: auto !important; }
+
+.upload-container .cafe-row button { flex: 0 0 120px; }

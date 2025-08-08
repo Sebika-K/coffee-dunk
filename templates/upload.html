@@ -21,12 +21,11 @@
         <!-- Cafe selector -->
         <div id="cafeSelect">
           <label for="cafeQuery"><strong>Select café</strong></label>
-          <div style="display: flex; gap: 8px; margin-top: 6px">
+          <div class="cafe-row">
             <input
               id="cafeQuery"
               type="text"
               placeholder="Search cafés (e.g., 'Mozart Austin')"
-              style="flex: 1; padding: 10px"
             />
             <button id="cafeSearchBtn" type="button">Search</button>
           </div>
@@ -72,7 +71,7 @@
         <!-- Hidden place_id from query param
         <input type="hidden" id="placeIdInput" value="{{ place_id }}" />  -->
 
-        <button type="submit">Post</button>
+        <button type="submit" disabled>Post</button>
       </form>
     </div>
 
