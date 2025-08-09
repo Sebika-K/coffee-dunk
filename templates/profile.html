@@ -23,11 +23,11 @@
       </div>
       <div class="stats">
         <div class="stat">
-          <span class="number">{{ posts|length }}</span>
+          <span class="number" id="postCount">0</span>
           <span class="label">POSTS</span>
         </div>
         <div class="stat">
-          <span class="number">{{ posts|length * 2 }}</span>
+          <span class="number" id="postCount">0</span>
           <span class="label">SCORE</span>
         </div>
       </div>
@@ -35,13 +35,16 @@
 
     <p class="bio">Just my regular dose of supplement.</p>
 
-    <div class="posts-grid">
-      {% for post in posts %}
-      <a href="/post/{{ post.id }}" class="post-card">
-        <img src="{{ post.image_url }}" alt="User Post" />
-      </ain>
-      {% endfor %}
-    </div>
+    <div class="posts-grid" id="postsGrid"></div>
+    <button class="add-post-btn" type="button" onclick="handleAddPost()">
+      +
+    </button>
+    <script>
+      function handleAddPost() {
+        window.location.href = "/upload";
+      }
+    </script>
     <script type="module" src="/static/js/firebase-init.js"></script>
+    <script type="module" src="/static/js/profile.js"></script>
   </body>
 </html>
