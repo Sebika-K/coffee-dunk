@@ -106,6 +106,7 @@ def cafe_detail(place_id):
 
     for u in uploads:
         u.setdefault("user", u.get("user_id", "anon"))
+        u.setdefault("image_url", "/static/assets/placeholder-post.jpg")
         u.setdefault("user_avatar", "/static/profiles/default.jpg")
 
     

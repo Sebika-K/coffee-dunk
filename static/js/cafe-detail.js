@@ -11,3 +11,14 @@ function openModal(card) {
 function closeModal() {
   document.getElementById("postModal").style.display = "none";
 }
+
+document.getElementById('backBtn')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  if (document.referrer) {
+    location.href = document.referrer; 
+  } else if (history.length > 1) {
+    history.back();
+  } else {
+    location.href = '/search'; // fallback
+  }
+});
