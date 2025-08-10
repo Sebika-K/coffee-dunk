@@ -5,6 +5,7 @@ import {
   sendPasswordResetEmail,
   setPersistence,
   browserLocalPersistence,
+  updateProfile,
   browserSessionPersistence
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
@@ -61,9 +62,15 @@ if (signupForm) {
 
     const email = document.getElementById("signup-email").value;
     const password = document.getElementById("signup-password").value;
+    const username = document.getElementById("signup-username").value.trim();
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+      if (username) {
+        await updateProfile(userCredential.user, { displayName: username });
+      }
+
       alert(`Signup successful! Welcome, ${userCredential.user.email}`);
       window.location.href = "/search";
     } catch (error) {
