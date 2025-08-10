@@ -23,15 +23,28 @@ def get_posts_by_cafe(cafe_name):
     ]
 
 def get_posts_by_place_id(place_id):
-    posts_ref = db.collection('uploads')
-    query = posts_ref.where('place_id', '==', place_id)
-    docs = query.stream()
-    return [
-        {
-            'image_url': doc.get('image_url'),
-            'caption': doc.get('caption'),
-            'rating': doc.get('rating'),
-            'user': doc.get('user'),
-            'user_avatar': doc.get('user_avatar')
-        } for doc in docs
-    ]
+    try:
+        posts_ref = db.collection('uploads')
+        #query = posts_ref.where('place_id', '==', place_id)
+        #docs = query.stream()
+        docs = posts_ref.where('place_id', '==', place_id).stream()
+        items = []
+        for snap in docs:
+            d = snap.to_dict() or {}
+            items.append({
+                'image_url': d.get('image_url'),
+                'caption': d.get('caption'),
+                'rating': d.get('rating'),
+                'user_id': d.get('user_id'),
+                'cafe_name': d.get('cafe_name'),
+                'user': d.get('user'), 
+                'user_avatar': d.get('user_avatar')
+            }) 
+        print(f"🔎 get_posts_by_place_id({place_id}) → {len(items)} rows")
+        return items
+
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        print("❌ Firestore error in get_posts_by_place_id:", e)
+        return []
+    #return items

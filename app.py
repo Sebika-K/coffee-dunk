@@ -27,6 +27,11 @@ def signup():
 def search():
     return render_template('search.html')
 
+@app.route('/upload')
+def upload_page():
+    place_id = request.args.get('place_id', '')
+    return render_template('upload.html', place_id=place_id)
+
 
 @app.route('/profile')
 def profile():

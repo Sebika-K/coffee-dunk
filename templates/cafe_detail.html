@@ -19,6 +19,12 @@
       <h2>~ {{ cafe_name | capitalize}} ~</h2>
     </div>
 
+    {% if not uploads %}
+    <p style="text-align: center; color: #7a5">
+      No posts here yet. Be the first!
+    </p>
+    {% endif %}
+
     <div class="posts-grid">
       {% for post in uploads %}
       <div

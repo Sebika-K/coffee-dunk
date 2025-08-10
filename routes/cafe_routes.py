@@ -94,3 +94,21 @@ def api_cafe_search():
 
     except requests.RequestException as e:
         return jsonify({"error": "Upstream request failed", "detail": str(e)}), 502
+    
+
+@cafe_bp.route("/cafe/<place_id>")
+def cafe_detail(place_id):
+    cafe_name = request.args.get("name", "")
+    print(" /cafe detail place_id:", place_id)  # debug
+    uploads = get_posts_by_place_id(place_id)
+    print(" uploads fetched:", len(uploads))     # debug
+
+
+    for u in uploads:
+        u.setdefault("user", u.get("user_id", "anon"))
+        u.setdefault("user_avatar", "/static/profiles/default.jpg")
+
+    
+    return render_template("cafe_detail.html",
+                            cafe_name=cafe_name,
+                            uploads=uploads)
