@@ -9,14 +9,12 @@ body.landing-page {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  height: 100vh;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  font-family: 'Inter', sans-serif;
+  min-height: 100dvh;         
+  font-family:'Inter', sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
+  color: #2b1b1b;
 }
 
 .container {
@@ -38,13 +36,21 @@ body.landing-page {
   font-size: 1rem;
   padding: 0 10px;
 }
-
-.bottom-links a {
-  color: #0000ff;
+.bottom-links p{
+  margin: 10px 0;             
+  font-size: 1rem;
+  text-shadow: 0 1px 2px rgba(0,0,0,.15); 
+}
+.link{
+  display: inline-block;
+  padding: 8px 10px;           
+  font-weight: 700;
   text-decoration: none;
-  font-weight: bold;
+  color: #0a58ff;              
 }
 
-.bottom-links a:hover {
+.link:hover, .link:focus{
   text-decoration: underline;
+  outline: none;
 }
+
