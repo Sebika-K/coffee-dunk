@@ -32,6 +32,7 @@ def get_posts_by_place_id(place_id):
         for snap in docs:
             d = snap.to_dict() or {}
             items.append({
+                'id': snap.id,
                 'image_url': d.get('image_url'),
                 'caption': d.get('caption'),
                 'rating': d.get('rating'),

@@ -19,8 +19,20 @@
     </div>
     <div class="profile-header">
       <div class="profile-pic">
-        <img src="/static/uploads/mozar2.jpg" alt="Profile Picture" />
+        <img
+          id="profilePic"
+          src="/static/assets/default-avatar.jpg"
+          alt="Profile Picture"
+        />
       </div>
+      <input
+        id="avatarInput"
+        type="file"
+        accept="image/*"
+        style="display: none"
+      />
+      <button id="changeAvatarBtn" type="button">Change photo</button>
+
       <div class="stats">
         <div class="stat">
           <span class="number" id="postCount">0</span>

@@ -3,6 +3,7 @@ import requests
 from flask import Blueprint, render_template, request, jsonify
 from .firebase_helpers import get_posts_by_place_id
 from dotenv import load_dotenv
+from firebase_admin import auth as admin_auth
 
 load_dotenv()
 
@@ -99,15 +100,32 @@ def api_cafe_search():
 @cafe_bp.route("/cafe/<place_id>")
 def cafe_detail(place_id):
     cafe_name = request.args.get("name", "")
-    print(" /cafe detail place_id:", place_id)  # debug
     uploads = get_posts_by_place_id(place_id)
-    print(" uploads fetched:", len(uploads))     # debug
-
 
     for u in uploads:
-        u.setdefault("user", u.get("user_id", "anon"))
-        u.setdefault("image_url", "/static/assets/placeholder-post.jpg")
-        u.setdefault("user_avatar", "/static/profiles/default.jpg")
+        u["image_url"]   = u.get("image_url")   or "/static/assets/placeholder-post.jpg"
+        u["caption"]     = u.get("caption")     or ""
+        u["rating"]      = u.get("rating")      or "N/A"
+
+        # If user fields are missing/None, fetch from Firebase Auth once
+        if not u.get("user") or not u.get("user_avatar"):
+            uid = u.get("user_id")
+            if uid:
+                try:
+                    fu = admin_auth.get_user(uid)
+                    if not u.get("user"):
+                        u["user"] = (fu.display_name or
+                                     (fu.email.split("@")[0] if fu.email else "Anon"))
+                    if not u.get("user_avatar"):
+                        u["user_avatar"] = fu.photo_url or "/static/assets/default-avatar.jpg"
+                except Exception:
+                    # Safe fallbacks if lookup fails
+                    u["user"] = u.get("user") or "Anon"
+                    u["user_avatar"] = u.get("user_avatar") or "/static/assets/default-avatar.jpg"
+            else:
+                # No uid stored—fallbacks
+                u["user"] = u.get("user") or "Anon"
+                u["user_avatar"] = u.get("user_avatar") or "/static/assets/default-avatar.jpg"
 
     
     return render_template("cafe_detail.html",
