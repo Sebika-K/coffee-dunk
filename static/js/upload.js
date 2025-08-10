@@ -9,6 +9,7 @@ import {
   addDoc,
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js';
 
 
 const qInput         = document.getElementById('cafeQuery');
@@ -26,6 +27,13 @@ const imagePreview= document.getElementById('imagePreview');
 const ratingInput = document.getElementById('ratingInput');
 const captionInput = document.getElementById('captionInput');
 
+let currentUser = null;
+
+onAuthStateChanged(auth, (u) => {
+  currentUser = u || null;
+  // Optional: disable the Post button until signed in
+  validateCanPost();
+});
 
 const postBtn     = uploadForm?.querySelector('button[type="submit"]');
 
@@ -107,12 +115,13 @@ clearBtn?.addEventListener('click', clearChosenCafe);
 
 
 function validateCanPost() {
+  const hasUser  = !!currentUser;
   const hasPlace  = !!(placeIdInput && placeIdInput.value);
   const hasImage  = !!(imageInput && imageInput.files && imageInput.files[0]);
   const r         = Number((ratingInput?.value || '').trim());
   const ratingOK  = Number.isFinite(r) && r >= 1 && r <= 5;
 
-  if (postBtn) postBtn.disabled = !(hasPlace && hasImage && ratingOK);
+  if (postBtn) postBtn.disabled = !(hasUser && hasPlace && hasImage && ratingOK);
 }
 
 // Preview image + revalidate when user picks a file
@@ -161,6 +170,12 @@ uploadForm?.addEventListener('submit', async (e) => {
     alert('Missing required info.');
     return;
   }
+  if (!currentUser) {
+  alert('Please log in first.');
+  window.location.href = '/login';
+  return;
+  }
+
 
   // Disable button while working
   postBtn.disabled = true;
@@ -173,6 +188,12 @@ uploadForm?.addEventListener('submit', async (e) => {
     await uploadBytes(fileRef, file);
     const downloadURL = await getDownloadURL(fileRef);
 
+    const username =
+      (currentUser?.displayName?.trim()) ||
+      (currentUser?.email ? currentUser.email.split('@')[0] : 'anon');
+
+    const userAvatar = currentUser?.photoURL || '/static/assets/default-avatar.jpg';
+
     // 2) Write Firestore doc
     await addDoc(collection(db, 'uploads'), {
       image_url:  downloadURL,
@@ -180,7 +201,9 @@ uploadForm?.addEventListener('submit', async (e) => {
       rating:     ratingNum,
       place_id:   placeId,
       cafe_name:  cafeName,
-      user_id:    uid,
+      user_id:    currentUser.uid,
+      user:       username,              
+      user_avatar:userAvatar, 
       created_at: serverTimestamp()
     });
 
