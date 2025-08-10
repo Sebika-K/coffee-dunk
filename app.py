@@ -35,15 +35,7 @@ def upload_page():
 
 @app.route('/profile')
 def profile():
-    posts = [
-        {'image_url': '/static/uploads/mozar1.jpg'},
-        {'image_url': '/static/uploads/mozar1.jpg'},
-        {'image_url': '/static/uploads/mozar1.jpg'},
-        {'image_url': '/static/uploads/mozar1.jpg'},
-        {'image_url': '/static/uploads/mozar1.jpg'},
-        {'image_url': '/static/uploads/mozar1.jpg'},
-    ]
-    return render_template('profile.html', posts=posts)
+    return render_template('profile.html')
 
 
 if __name__ == '__main__':

@@ -6,11 +6,16 @@ import {
   orderBy,
   getDocs
 } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
 const grid = document.getElementById('postsGrid');
 
 function renderPosts(docs) {
   grid.innerHTML = ''; // clear
+
+  document.getElementById('postCount')?.replaceChildren(document.createTextNode(String(docs.length)));
+  document.getElementById('scoreCount')?.replaceChildren(document.createTextNode(String(docs.length * 2)));
+  
   if (!docs.length) {
     grid.innerHTML = '<p style="color:#5c2a2a">No posts yet.</p>';
     return;
@@ -49,10 +54,12 @@ async function loadMyPosts(uid) {
 }
 
 // Wait for auth, then load
-const unsub = auth.onAuthStateChanged(user => {
+const unsub = onAuthStateChanged(auth, user => {
   if (!user) {
     grid.innerHTML = '<p style="color:#5c2a2a">Please log in to see your posts.</p>';
     return;
   }
+  const name = user.displayName || (user.email ? user.email.split("@")[0] : "You");
+  document.querySelector(".top-bar .username")?.replaceChildren(document.createTextNode(name));
   loadMyPosts(user.uid);
 });
