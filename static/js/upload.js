@@ -27,6 +27,10 @@ const imagePreview= document.getElementById('imagePreview');
 const ratingInput = document.getElementById('ratingInput');
 const captionInput = document.getElementById('captionInput');
 
+const stage = document.getElementById('photoStage');
+const galleryBtn = document.getElementById('pickFromGallery');
+const clearPhotoBtn = document.getElementById('clearPhoto');
+
 let currentUser = null;
 
 onAuthStateChanged(auth, (u) => {
@@ -218,4 +222,20 @@ uploadForm?.addEventListener('submit', async (e) => {
     postBtn.textContent = 'Post';
     return;
   }
+});
+galleryBtn?.addEventListener('click', () => imageInput?.click());
+stage?.addEventListener('click', () => {
+  // Let users tap the stage to pick/take a photo
+  imageInput?.click();
+});
+function clearSelectedPhoto() {
+  if (!imageInput) return;
+  imageInput.value = '';
+  imagePreview.removeAttribute('src');
+  imagePreview.style.display = 'none';
+  validateCanPost();
+}
+clearPhotoBtn?.addEventListener('click', (e) => {
+  e.stopPropagation(); // don't trigger stage click
+  clearSelectedPhoto();
 });

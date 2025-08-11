@@ -36,7 +36,7 @@ saveBtn?.addEventListener('click', async () => {
 
   try {
     // Store at a stable path; overwrite old
-    const path = `avatars/${currentUser.uid}.jpg`;
+    const path = `avatars/${currentUser.uid}/profile.jpg`;
     const ref = storageRef(storage, path);
     await uploadBytes(ref, pickedFile);
     const downloadURL = await getDownloadURL(ref);

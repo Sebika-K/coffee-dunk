@@ -14,19 +14,46 @@
     />
   </head>
   <body class="upload-page">
-    <div class="upload-container">
+    <a class="back-btn" href="/profile">←</a>
+    <div class="post-header">
       <h2>Upload a Post</h2>
+    </div>
+    <div class="upload-container">
+      <div id="photoStage" class="photo-stage">
+        <img id="imagePreview" alt="Preview" />
+        <button
+          type="button"
+          id="pickFromGallery"
+          class="icon-btn gallery"
+          aria-label="Pick from gallery"
+        >
+          🖼️
+        </button>
+        <button
+          type="button"
+          id="clearPhoto"
+          class="icon-btn trash"
+          aria-label="Remove photo"
+        >
+          🗑
+        </button>
+      </div>
+
+      <!-- Hidden file input (triggers camera/gallery) -->
+      <input
+        type="file"
+        accept="image/*"
+        capture="environment"
+        id="imageInput"
+        style="display: none"
+      />
 
       <form id="uploadForm">
         <!-- Cafe selector -->
         <div id="cafeSelect">
           <label for="cafeQuery"><strong>Select café</strong></label>
           <div class="cafe-row">
-            <input
-              id="cafeQuery"
-              type="text"
-              placeholder="Search cafés (e.g., 'Mozart Austin')"
-            />
+            <input id="cafeQuery" type="text" placeholder="Search cafés" />
             <button id="cafeSearchBtn" type="button">Search</button>
           </div>
 
@@ -48,14 +75,14 @@
           <input type="hidden" id="placeIdInput" value="" />
           <input type="hidden" id="cafeNameInput" value="" />
         </div>
-        <!-- Image picker -->
-        <input type="file" accept="image/*" id="imageInput" required />
+        <!-- Image picker 
+        <input type="file" accept="image/*" id="imageInput" required /> -->
 
-        <!-- Preview -->
+        <!-- Preview 
         <img
           id="imagePreview"
           style="display: none; max-width: 100%; margin-top: 10px"
-        />
+        />  -->
 
         <!-- Caption -->
         <textarea
