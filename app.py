@@ -44,6 +44,9 @@ def settings():
 def settings_photo():
     return render_template('settings_photo.html')
 
+@app.route('/settings/username')
+def settings_username():
+    return render_template('settings_username.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
