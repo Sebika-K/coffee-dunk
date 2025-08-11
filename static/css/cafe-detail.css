@@ -29,7 +29,7 @@ body.cafe-detail-page {
   border-radius: 10px;
   padding: 8px 20px;
   font-weight: bold;
-  color: #5c2a2a;
+  color: #7D2E4D;
   font-size: 18px;
   text-align: center;
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
@@ -40,7 +40,7 @@ body.cafe-detail-page {
   justify-content: center;
   text-decoration: none;
   font-size: 28px;          
-  color: #5c2a2a;          
+  color: #7D2E4D;          
   background-color: rgba(255, 255, 255, 0.7);
   width: 40px;
   height: 40px;
@@ -85,11 +85,11 @@ body.cafe-detail-page {
 
 .caption {
   margin: 5px 0;
-  color: #5c2a2a;
+  color: #7D2E4D;
 }
 
 .rating {
-  color: #5c2a2a;
+  color: #7D2E4D;
   font-weight: bold;
 }
 
@@ -107,7 +107,7 @@ body.cafe-detail-page {
 }
 
 .username {
-  color: #5c2a2a;
+  color: #7D2E4D;
   font-weight: 500;
 }
 .modal {
@@ -136,6 +136,21 @@ body.cafe-detail-page {
 .modal-content img {
   width: 100%;
   border-radius: 10px;
+}
+
+.modal-media {
+  width: 100%;
+  aspect-ratio: 4 / 5;     
+  border-radius: 10px;
+  overflow: hidden;         
+  background: #eee;         
+}
+
+.modal-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .close-btn {
