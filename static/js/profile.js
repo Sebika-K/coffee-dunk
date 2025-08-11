@@ -1,4 +1,4 @@
-import { auth, db, storage } from '/static/js/firebase-init.js';
+import { auth, db } from '/static/js/firebase-init.js';
 import {
   collection,
   query,
@@ -7,20 +7,11 @@ import {
   getDocs
 } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
-import { onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-storage.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
 const grid = document.getElementById('postsGrid');
 const picEl = document.getElementById('profilePic');
-const changeBtn = document.getElementById('changeAvatarBtn');
-const fileInput = document.getElementById('avatarInput');
 const bioEl = document.getElementById('bioText');
-
-
-changeBtn?.addEventListener('click', () => {
-  if (!auth.currentUser) return alert('Please log in first.');
-  fileInput?.click();
-});
 
 function renderPosts(docs) {
   grid.innerHTML = ''; // clear
@@ -86,25 +77,4 @@ onAuthStateChanged(auth, user => {
   }
 })();
   loadMyPosts(user.uid);
-});
-fileInput?.addEventListener('change', async () => {
-  const file = fileInput.files?.[0];
-  const user = auth.currentUser;
-  if (!file || !user) return;
-
-  try {
-    const ref = storageRef(storage, `avatars/${user.uid}.jpg`);
-    await uploadBytes(ref, file);
-    const url = await getDownloadURL(ref);
-
-    await updateProfile(user, { photoURL: url });
-    if (picEl) picEl.src = url;
-
-    alert('Profile photo updated!');
-  } catch (err) {
-    console.error(err);
-    alert('Failed to update photo: ' + err.message);
-  } finally {
-    fileInput.value = '';
-  }
 });
