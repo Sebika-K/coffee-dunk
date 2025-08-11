@@ -32,7 +32,6 @@ def upload_page():
     place_id = request.args.get('place_id', '')
     return render_template('upload.html', place_id=place_id)
 
-
 @app.route('/profile')
 def profile():
     return render_template('profile.html')
@@ -40,6 +39,10 @@ def profile():
 @app.route('/settings')
 def settings():
     return render_template('settings.html')
+
+@app.route('/settings/photo')
+def settings_photo():
+    return render_template('settings_photo.html')
 
 
 if __name__ == '__main__':

@@ -1,0 +1,42 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Change Profile Photo</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/settings-photo.css') }}"
+    />
+  </head>
+  <body class="settings-photo-page">
+    <a href="/settings" class="back-btn">←</a>
+
+    <div class="wrap">
+      <h2>Change Profile Picture</h2>
+
+      <div class="avatar-area">
+        <img
+          id="preview"
+          src="/static/assets/default-avatar.jpg"
+          alt="Preview"
+        />
+        <button id="pickBtn" type="button" class="pick">📷</button>
+        <input
+          id="fileInput"
+          type="file"
+          accept="image/*"
+          style="display: none"
+        />
+      </div>
+
+      <button id="saveBtn" type="button" class="save" disabled>Save</button>
+    </div>
+
+    <script type="module" src="/static/js/firebase-init.js"></script>
+    <script type="module" src="/static/js/settings-photo.js"></script>
+  </body>
+</html>
