@@ -48,5 +48,9 @@ def settings_photo():
 def settings_username():
     return render_template('settings_username.html')
 
+@app.route('/settings/bio')
+def settings_bio():
+    return render_template('settings_bio.html')
+
 if __name__ == '__main__':
     app.run(debug=True)

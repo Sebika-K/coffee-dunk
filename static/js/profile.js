@@ -6,6 +6,7 @@ import {
   orderBy,
   getDocs
 } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
 import { onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-storage.js";
 
@@ -13,6 +14,8 @@ const grid = document.getElementById('postsGrid');
 const picEl = document.getElementById('profilePic');
 const changeBtn = document.getElementById('changeAvatarBtn');
 const fileInput = document.getElementById('avatarInput');
+const bioEl = document.getElementById('bioText');
+
 
 changeBtn?.addEventListener('click', () => {
   if (!auth.currentUser) return alert('Please log in first.');
@@ -72,6 +75,16 @@ onAuthStateChanged(auth, user => {
   const name = user.displayName || (user.email ? user.email.split("@")[0] : "You");
   document.querySelector(".top-bar .username")?.replaceChildren(document.createTextNode(name));
   if (picEl) picEl.src = user.photoURL || "/static/assets/default-avatar.jpg";
+
+  (async () => {
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    const bio = snap.exists() ? (snap.data().bio || '') : '';
+    if (bioEl) bioEl.textContent = bio || ' ';
+  } catch (e) {
+    console.warn('Bio load failed:', e);
+  }
+})();
   loadMyPosts(user.uid);
 });
 fileInput?.addEventListener('change', async () => {

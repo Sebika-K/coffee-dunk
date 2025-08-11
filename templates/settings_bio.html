@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Bio</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/settings-bio.css') }}"
+    />
+  </head>
+  <body class="settings-bio-page">
+    <a href="/settings" class="back-btn">←</a>
+
+    <div class="wrap">
+      <h2>Edit Bio</h2>
+
+      <textarea
+        id="bioInput"
+        rows="5"
+        maxlength="200"
+        placeholder="Write something about you..."
+      ></textarea>
+      <div class="counter"><span id="bioCount">0</span>/200</div>
+
+      <button id="saveBtn" type="button" disabled>Save</button>
+    </div>
+
+    <script type="module" src="/static/js/firebase-init.js"></script>
+    <script type="module" src="/static/js/settings-bio.js"></script>
+  </body>
+</html>

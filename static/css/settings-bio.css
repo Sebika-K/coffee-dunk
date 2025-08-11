@@ -1,11 +1,11 @@
-body.settings-username-page{
+body.settings-bio-page{
   background-image:url('/static/assets/background_screen.png');
   background-size:cover; 
   background-position:center; 
   background-repeat:no-repeat;
   min-height:100vh; margin:0; 
   font-family:'Inter',sans-serif; 
-  color:#7D2E4D;
+  color:#5c2a2a;
 }
 .back-btn{ 
   position:fixed; 
@@ -28,20 +28,12 @@ body.settings-username-page{
   padding:56px 16px 24px; 
 }
 h2{ 
-  text-align:center; 
-  margin-top: 80px;
-  margin-bottom:50px; 
+  text-align:center;
+  margin-top: 80px; 
+  margin-bottom:12px; 
   color: #7D2E4D;
 }
-.username-title {
-  text-align: center;
-  margin-top: 80px;
-  margin-bottom: 40px;
-  font-weight: 600;
-  color: #7D2E4D;
-}
-
-#usernameInput {
+#bioInput{
   display: block;
   width: 90%;
   max-width: 320px;
@@ -54,13 +46,14 @@ h2{
   text-align: center;
   color: #7D2E4D;
   outline: none;
+  resize: vertical;
 }
-#usernameInput::placeholder {
-  color: #7D2E4D;
-  opacity: 0.6;
-  letter-spacing: 0.3px;
+.counter{ 
+  text-align:right; 
+  font-size:12px; 
+  opacity:.8; 
+  margin-top:6px; 
 }
-
 #saveBtn {
   display: block;
   margin: 0 auto;
@@ -79,3 +72,4 @@ h2{
 #saveBtn:hover:not(:disabled) {
   box-shadow: 0 8px 18px rgba(125, 46, 77, 0.35);
 }
+
