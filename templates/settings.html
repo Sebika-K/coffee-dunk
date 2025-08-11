@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settings</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/settings.css') }}"
+    />
+  </head>
+  <body class="settings-page">
+    <div class="top-bar">
+      <a href="javascript:history.back()" class="back-btn">←</a>
+      <h1 class="page-title">settings</h1>
+    </div>
+
+    <div class="settings-wrap">
+      <div class="avatar-block">
+        <img
+          id="settingsAvatar"
+          src="/static/assets/default-avatar.jpg"
+          alt="Avatar"
+        />
+        <button id="goChangePhoto" type="button">Change Profile Picture</button>
+      </div>
+
+      <div class="list">
+        <div class="row">
+          <div class="cell">
+            <div class="label">Username</div>
+            <div class="value" id="currentUsername">—</div>
+          </div>
+          <a class="edit" href="/settings/username">✎</a>
+        </div>
+
+        <div class="row">
+          <div class="cell">
+            <div class="label">Bio</div>
+            <div class="value" id="currentBio">—</div>
+          </div>
+          <a class="edit" href="/settings/bio">✎</a>
+        </div>
+      </div>
+
+      <button id="logoutBtn" class="logout">LOGOUT</button>
+    </div>
+
+    <script type="module" src="/static/js/firebase-init.js"></script>
+    <script type="module" src="/static/js/settings.js"></script>
+  </body>
+</html>
