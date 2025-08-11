@@ -11,6 +11,10 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/profile.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/nav-pill.css') }}"
+    />
   </head>
   <body class="profile-page">
     <div class="top-bar">
@@ -50,5 +54,7 @@
     </script>
     <script type="module" src="/static/js/firebase-init.js"></script>
     <script type="module" src="/static/js/profile.js"></script>
+    <script type="module" src="/static/js/nav-pill.js"></script>
+    {% include "partials/nav_pill.html" %}
   </body>
 </html>

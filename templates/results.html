@@ -12,6 +12,10 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/result.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/nav-pill.css') }}"
+    />
   </head>
   <body class="results-page">
     <div class="navbar">
@@ -51,6 +55,8 @@
 
       {% endfor %}
     </div>
+    {% include "partials/nav_pill.html" %}
+    <script type="module" src="/static/js/nav-pill.js"></script>
     <script type="module" src="/static/js/firebase-init.js"></script>
   </body>
 </html>

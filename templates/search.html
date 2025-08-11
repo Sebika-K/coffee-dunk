@@ -12,6 +12,10 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/search.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/nav-pill.css') }}"
+    />
   </head>
   <body class="search-page">
     <div class="search-container">
@@ -20,5 +24,7 @@
         <button type="submit">Search</button>
       </form>
     </div>
+    {% include "partials/nav_pill.html" %}
+    <script type="module" src="/static/js/nav-pill.js"></script>
   </body>
 </html>

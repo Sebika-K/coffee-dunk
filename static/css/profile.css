@@ -42,6 +42,7 @@ body.profile-page {
   color: #7D2E4D;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
 }
 
 .profile-header {
