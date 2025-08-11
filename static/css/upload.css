@@ -6,7 +6,7 @@ body.upload-page {
   height: 100vh;
   margin: 0;
   padding: 10px;
-  overflow: hidden;
+  /*overflow: hidden;*/
   font-family: 'Inter', sans-serif;
 }
 

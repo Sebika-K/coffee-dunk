@@ -1,12 +1,17 @@
-import { auth, db } from '/static/js/firebase-init.js';
+import { auth, db, storage } from '/static/js/firebase-init.js';
 import {
   collection,
   query,
   where,
   orderBy,
-  getDocs
+  getDocs,
+  doc as fsDoc, getDoc, deleteDoc
 } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
+//import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js';
+import {
+  ref as storageRef, deleteObject
+} from 'https://www.gstatic.com/firebasejs/12.0.0/firebase-storage.js';
+
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
 const grid = document.getElementById('postsGrid');
@@ -27,13 +32,37 @@ function renderPosts(docs) {
   // Create a fragment for performance
   const frag = document.createDocumentFragment();
 
-  docs.forEach(doc => {
-    const data = doc.data();
-    const a = document.createElement('a');
-    a.className = 'post-card';
-    a.href = `/post/${doc.id}`; // placeholder for future
-    a.innerHTML = `<img src="${data.image_url}" alt="User Post" />`;
-    frag.appendChild(a);
+  docs.forEach(d => {
+    const data = d.data();
+    const id = d.id;
+    const card = document.createElement('div');
+    card.className = 'post-card';
+    card.dataset.postId = id;
+
+    // Navigate to detail on card click
+    card.addEventListener('click', () => {
+      window.location.href = `/post/${id}`;
+    });
+
+    // Image
+    const img = document.createElement('img');
+    img.src = data.image_url;
+    img.alt = 'User Post';
+    card.appendChild(img);
+
+    // Delete button (🗑️)
+    const del = document.createElement('button');
+    del.className = 'delete-btn';
+    del.setAttribute('aria-label', 'Delete');
+    del.textContent = '🗑️';
+    // Stop the card click from firing when pressing delete
+    del.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deletePost({ docId: id, imageUrl: data.image_url, uid: data.user_id });
+    });
+
+    card.appendChild(del);
+    frag.appendChild(card);
   });
 
   grid.appendChild(frag);
@@ -69,7 +98,7 @@ onAuthStateChanged(auth, user => {
 
   (async () => {
   try {
-    const snap = await getDoc(doc(db, 'users', user.uid));
+    const snap = await getDoc(fsDoc(db, 'users', user.uid));
     const bio = snap.exists() ? (snap.data().bio || '') : '';
     if (bioEl) bioEl.textContent = bio || ' ';
   } catch (e) {
@@ -78,3 +107,40 @@ onAuthStateChanged(auth, user => {
 })();
   loadMyPosts(user.uid);
 });
+
+async function deletePost({ docId, imageUrl, uid }) {
+  // Double-confirm on client
+  const sure = window.confirm("Are you sure you want to delete?");
+  if (!sure) return;
+
+  try {
+    // 1) Delete Firestore doc
+    await deleteDoc(fsDoc(db, 'uploads', docId));
+
+    // 2) Delete the image from Storage 
+    if (imageUrl && imageUrl.startsWith('http')) {
+      try {
+        const imgRef = storageRef(storage, imageUrl);
+        await deleteObject(imgRef);
+      } catch (e) {
+        console.warn('Storage delete skipped/failed:', e);
+      }
+    }
+
+    // Remove card from UI
+    const el = document.querySelector(`[data-post-id="${docId}"]`);
+    if (el?.parentElement) el.parentElement.removeChild(el);
+
+    // Update counts
+    const countEl = document.getElementById('postCount');
+    if (countEl) {
+      const newCount = Math.max(0, (parseInt(countEl.textContent || '0', 10) - 1));
+      countEl.textContent = String(newCount);
+      const scoreEl = document.getElementById('scoreCount');
+      if (scoreEl) scoreEl.textContent = String(newCount * 2);
+    }
+  } catch (err) {
+    console.error('Delete failed:', err);
+    alert('Failed to delete post. Please try again.');
+  }
+}
