@@ -22,7 +22,7 @@ body.upload-page {
 }
 
 .post-header h2 {
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: rgba(255, 255, 255, 0.6);
   border-radius: 10px;
   padding: 8px 20px;
   font-weight: bold;
@@ -54,8 +54,6 @@ body.upload-page {
   background-color: #d8c2aa; 
 }
 
-
-
 .upload-container {
   width: 360px;
   height: 759px;
@@ -67,13 +65,29 @@ body.upload-page {
 }
 
 .upload-container input,
-.upload-container textarea,
-.upload-container button {
+.upload-container textarea{
   width: 100%;
+  box-sizing: border-box;
   margin-top: 10px;
   padding: 10px;
   border-radius: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid rgba(125, 46, 77, 0.57);
+  background-color: #D8D0CB;
+  color: #7D2E4D;
+}
+.upload-container input::placeholder,
+.upload-container textarea::placeholder {
+  color: rgba(125, 46, 77, 0.6);
+}
+#uploadForm label {
+  color: #7D2E4D;
+  font-weight: 600; 
+}
+.upload-container input:focus,
+.upload-container textarea:focus {
+  outline: none; 
+  border-color: rgba(125, 46, 77, 0.57);
+  box-shadow: 0 0 0 2px rgba(125, 46, 77, 0.2); 
 }
 .upload-container .cafe-row { 
   display: flex; 
@@ -90,16 +104,49 @@ body.upload-page {
   flex: 0 0 120px;  
   width: auto;     
 }
+#cafeSelect {
+  position: relative;
+}
 
-.upload-container button {
+#cafeResults {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(48px + 12px); 
+  z-index: 50;
+
+  margin: 0;               
+  padding: 10px 0;
+  list-style: none;
+
+  background: #D8D0CB;
+  border: 1px solid rgba(125, 46, 77, 0.15);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+
+  max-height: 260px;    
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#cafeResults li {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+#cafeResults li:last-child { border-bottom: none; }
+.upload-container button:not(.icon-btn) {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
   background-color: #7D2E4D;
   color: white;
   font-weight: bold;
 }
-.upload-container .cafe-row input,
-.upload-container .cafe-row button { width: auto !important; }
-
-.upload-container .cafe-row button { flex: 0 0 120px; }
+#cafeResults:empty {
+  display: none;
+}
 
 .photo-stage {
   position: relative;
@@ -122,14 +169,20 @@ body.upload-page {
 
 .icon-btn {
   position: absolute;
-  background: none;       
+  background: rgba(255,255,255,0.85);     
   border: none;           
   box-shadow: none;     
   cursor: pointer;
-  font-size: 22px;       
+  font-size: 18px;       
   color: white;          
   padding: 0;          
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
 }
 
 .icon-btn.gallery { top: 8px; right: 8px; }

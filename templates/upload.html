@@ -51,7 +51,7 @@
       <form id="uploadForm">
         <!-- Cafe selector -->
         <div id="cafeSelect">
-          <label for="cafeQuery"><strong>Select café</strong></label>
+          <label for="cafeQuery"><strong>Select cafe</strong></label>
           <div class="cafe-row">
             <input id="cafeQuery" type="text" placeholder="Search cafés" />
             <button id="cafeSearchBtn" type="button">Search</button>
@@ -75,14 +75,6 @@
           <input type="hidden" id="placeIdInput" value="" />
           <input type="hidden" id="cafeNameInput" value="" />
         </div>
-        <!-- Image picker 
-        <input type="file" accept="image/*" id="imageInput" required /> -->
-
-        <!-- Preview 
-        <img
-          id="imagePreview"
-          style="display: none; max-width: 100%; margin-top: 10px"
-        />  -->
 
         <!-- Caption -->
         <textarea
@@ -94,9 +86,6 @@
         <!-- Rating -->
         <label for="ratingInput">Rating (1-5):</label>
         <input type="number" id="ratingInput" min="1" max="5" required />
-
-        <!-- Hidden place_id from query param
-        <input type="hidden" id="placeIdInput" value="{{ place_id }}" />  -->
 
         <button type="submit" disabled>Post</button>
       </form>

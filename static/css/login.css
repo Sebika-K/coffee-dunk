@@ -35,7 +35,7 @@ body.login-page {
   border-radius: 0px;
   padding: 8px;
   font-size: 15px;
-  color: #722323;
+  color: #7D2E4D;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -97,7 +97,7 @@ body.login-page {
 
 .login-options input[type="checkbox"]:checked::after {
   content: "✓";
-  color: #722323;           
+  color: #7D2E4D;           
   font-size: 14px;
   display: block;
   text-align: center;

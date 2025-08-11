@@ -239,3 +239,9 @@ clearPhotoBtn?.addEventListener('click', (e) => {
   e.stopPropagation(); // don't trigger stage click
   clearSelectedPhoto();
 });
+document.addEventListener('click', (e) => {
+  const select = document.getElementById('cafeSelect');
+  if (!select.contains(e.target)) {
+    resultsEl.innerHTML = '';
+  }
+});
