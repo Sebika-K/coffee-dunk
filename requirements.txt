@@ -1,0 +1,7 @@
+# Libraries the Coffee Dunk backend needs.
+# Install them with:  pip install -r requirements.txt
+
+flask==3.1.1           # the web server framework
+python-dotenv==1.1.1   # loads secret keys from the .env file
+requests==2.32.4       # lets the server call Google's Places API
+firebase-admin==7.1.0  # lets the server read the Firestore database
