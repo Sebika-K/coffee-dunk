@@ -209,37 +209,73 @@ def api_cafe_search():
         return jsonify({"error": "Upstream request failed", "detail": str(e)}), 502
     
 
+def get_cafe_posts(place_id):
+    """
+    Shared logic used by BOTH the web page (/cafe/<place_id>) and the mobile
+    API (/api/cafes/<place_id>/posts).
+
+    Loads all posts for one café from Firestore and fills in missing user
+    names/avatars from Firebase Auth. Missing values stay None - it's up to
+    whoever DISPLAYS the data (web page or app) to choose a fallback image.
+    Returns posts newest first.
+    """
+    posts = get_posts_by_place_id(place_id)
+    user_cache = {}  # uid -> Firebase user, so each person is looked up only once
+
+    for p in posts:
+        if p.get("user") and p.get("user_avatar"):
+            continue  # already complete, nothing to look up
+
+        uid = p.get("user_id")
+        if not uid:
+            continue
+
+        if uid not in user_cache:
+            try:
+                user_cache[uid] = admin_auth.get_user(uid)
+            except Exception:
+                user_cache[uid] = None  # lookup failed; remember so we don't retry
+
+        fu = user_cache[uid]
+        if fu:
+            if not p.get("user"):
+                p["user"] = fu.display_name or (fu.email.split("@")[0] if fu.email else None)
+            if not p.get("user_avatar"):
+                p["user_avatar"] = fu.photo_url
+
+    # Newest first (posts without a date go last)
+    posts.sort(key=lambda p: p["created_at"].timestamp() if p.get("created_at") else 0, reverse=True)
+    return posts
+
+
 @cafe_bp.route("/cafe/<place_id>")
 def cafe_detail(place_id):
+    """Web page version: adds display fallbacks, then renders HTML."""
     cafe_name = request.args.get("name", "")
-    uploads = get_posts_by_place_id(place_id)
+    uploads = get_cafe_posts(place_id)
 
     for u in uploads:
-        u["image_url"]   = u.get("image_url")   or "/static/assets/placeholder-post.jpg"
+        u["image_url"]   = u.get("image_url")   or "/static/images/placeholder.jpg"
         u["caption"]     = u.get("caption")     or ""
         u["rating"]      = u.get("rating")      or "N/A"
+        u["user"]        = u.get("user")        or "Anon"
+        u["user_avatar"] = u.get("user_avatar") or "/static/assets/default-avatar.jpg"
 
-        # If user fields are missing/None, fetch from Firebase Auth once
-        if not u.get("user") or not u.get("user_avatar"):
-            uid = u.get("user_id")
-            if uid:
-                try:
-                    fu = admin_auth.get_user(uid)
-                    if not u.get("user"):
-                        u["user"] = (fu.display_name or
-                                     (fu.email.split("@")[0] if fu.email else "Anon"))
-                    if not u.get("user_avatar"):
-                        u["user_avatar"] = fu.photo_url or "/static/assets/default-avatar.jpg"
-                except Exception:
-                    # Safe fallbacks if lookup fails
-                    u["user"] = u.get("user") or "Anon"
-                    u["user_avatar"] = u.get("user_avatar") or "/static/assets/default-avatar.jpg"
-            else:
-                # No uid stored—fallbacks
-                u["user"] = u.get("user") or "Anon"
-                u["user_avatar"] = u.get("user_avatar") or "/static/assets/default-avatar.jpg"
+    return render_template("cafe_detail.html", cafe_name=cafe_name, uploads=uploads)
 
-    
-    return render_template("cafe_detail.html",
-                            cafe_name=cafe_name,
-                            uploads=uploads)
+
+@cafe_bp.route("/api/cafes/<place_id>/posts")
+def api_cafe_posts(place_id):
+    """
+    Mobile app version: all posts for one café as JSON, newest first.
+    Example: /api/cafes/ChIJOzVa9gSLj4ARFQqljssXWUI/posts
+    """
+    posts = get_cafe_posts(place_id)
+
+    for p in posts:
+        # Dates aren't JSON-friendly, so send them as standard text
+        # like "2025-08-12T14:03:22+00:00"
+        if p.get("created_at"):
+            p["created_at"] = p["created_at"].isoformat()
+
+    return jsonify({"place_id": place_id, "count": len(posts), "posts": posts})

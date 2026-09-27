@@ -44,7 +44,8 @@ def get_posts_by_place_id(place_id):
                 'user_id': d.get('user_id'),
                 'cafe_name': d.get('cafe_name'),
                 'user': d.get('user'), 
-                'user_avatar': d.get('user_avatar')
+                'user_avatar': d.get('user_avatar'),
+                'created_at': d.get('created_at')
             }) 
         print(f"🔎 get_posts_by_place_id({place_id}) → {len(items)} rows")
         return items
