@@ -52,5 +52,9 @@ def settings_username():
 def settings_bio():
     return render_template('settings_bio.html')
 
+@app.route('/service-worker.js')
+def service_worker():
+    return app.send_static_file('service-worker.js')
+
 if __name__ == '__main__':
     app.run(debug=True)

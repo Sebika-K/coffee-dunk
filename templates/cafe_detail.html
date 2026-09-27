@@ -16,6 +16,8 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/nav-pill.css') }}"
     />
+    <link rel="manifest" href="/static/manifest.webmanifest" />
+    <meta name="theme-color" content="#7D2E4D" />
   </head>
   <body class="cafe-detail-page">
     <a href="/results" class="back-button" id="backBtn"> &#8592; </a>
@@ -61,6 +63,15 @@
     <script type="module" src="/static/js/nav-pill.js"></script>
     <script type="module" src="/static/js/firebase-init.js"></script>
     <script src="{{ url_for('static', filename='js/cafe-detail.js') }}"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/service-worker.js")
+            .catch((err) => console.error("SW registration failed:", err));
+        });
+      }
+    </script>
     {% include "partials/nav_pill.html" %}
   </body>
 </html>

@@ -8,6 +8,8 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
     />
+    <link rel="manifest" href="/static/manifest.webmanifest" />
+    <meta name="theme-color" content="#7D2E4D" />
   </head>
   <body class="landing-page">
     <div class="container">
@@ -17,6 +19,14 @@
         <p>Don't have an account? <a href="/signup"> Sign Up</a></p>
       </div>
     </div>
-    <!--<script type="module" src="/static/js/firebase-init.js"></script> -->
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/service-worker.js")
+            .catch((err) => console.error("SW registration failed:", err));
+        });
+      }
+    </script>
   </body>
 </html>
