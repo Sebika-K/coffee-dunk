@@ -1,9 +1,14 @@
+import os
 import firebase_admin
 from firebase_admin import credentials, firestore
 
+# Path to the secret key, built from THIS file's location (routes/),
+# so it works no matter which folder the server is started from.
+KEY_PATH = os.path.join(os.path.dirname(__file__), "..", "secrets", "firebase-key.json")
+
 # Initialize Firebase (only once globally)
 if not firebase_admin._apps:
-    cred = credentials.Certificate("secrets/firebase-key.json")
+    cred = credentials.Certificate(KEY_PATH)
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
