@@ -12,48 +12,114 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 # Create the Blueprint
 cafe_bp = Blueprint("cafe", __name__)
 
+GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
+NEARBY_URL  = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+
+
+def find_cafes_near_city(city, radius):
+    """
+    Shared logic used by BOTH the web page (/results) and the mobile API
+    (/api/cafes/nearby). Turns a city name into coordinates, then asks
+    Google for cafés around that point.
+
+    Returns (cafes, error). If something goes wrong, cafes is [] and
+    error explains why; otherwise error is None.
+    """
+    # 1) City name -> latitude/longitude
+    geo = requests.get(
+        GEOCODE_URL, params={"address": city, "key": GOOGLE_API_KEY}, timeout=10
+    ).json()
+    if geo.get("status") != "OK":
+        return [], geo.get("error_message") or geo.get("status")
+
+    location = geo["results"][0]["geometry"]["location"]
+
+    # 2) Cafés near that point
+    places = requests.get(
+        NEARBY_URL,
+        params={
+            "location": f"{location['lat']},{location['lng']}",
+            "radius": radius,
+            "type": "cafe",
+            "keyword": "coffee",
+            "key": GOOGLE_API_KEY,
+        },
+        timeout=10,
+    ).json()
+    if places.get("status") not in ("OK", "ZERO_RESULTS"):
+        return [], places.get("error_message") or places.get("status")
+
+    # 3) Keep only the fields our app uses
+    cafes = []
+    for place in places.get("results", []):
+        photos = place.get("photos")
+        cafes.append({
+            "name": place.get("name"),
+            "place_id": place.get("place_id"),
+            "address": place.get("vicinity"),
+            "rating": place.get("rating"),  # None if the café has no rating yet
+            "photo_ref": photos[0]["photo_reference"] if photos else None,
+        })
+
+    # 4) Highest rated first (cafés with no rating go last)
+    cafes.sort(key=lambda c: c["rating"] or 0, reverse=True)
+    return cafes, None
+
+
+def parse_radius(value):
+    """Read the radius from the URL safely: default 5000 m, max 50000 m (Google's limit)."""
+    try:
+        return max(1, min(int(value), 50000))
+    except (TypeError, ValueError):
+        return 5000
+
+
 @cafe_bp.route("/results")
 def results():
+    """Web page version (unchanged behaviour for the existing website)."""
     city = request.args.get("city", "").strip()
-    radius = request.args.get("radius", 5000)
+    radius = parse_radius(request.args.get("radius"))
     cafes = []
 
     if city:
-        #Get coordinates for the city
-        geocode_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={city}&key={GOOGLE_API_KEY}"
-        geo_resp = requests.get(geocode_url).json()
-        
-        if geo_resp['status'] == 'OK':
-            location = geo_resp['results'][0]['geometry']['location']
-            lat, lng = location['lat'], location['lng']
+        found, _error = find_cafes_near_city(city, radius)
+        for c in found:
+            cafes.append({
+                "name": c["name"],
+                "place_id": c["place_id"],
+                "rating": c["rating"] if c["rating"] is not None else "N/A",
+                "image_url": get_place_photo(c["photo_ref"]),
+            })
 
-            #Get cafes
-            places_url = (
-                f"https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-                f"?location={lat},{lng}&radius={radius}&type=cafe&keyword=coffee&key={GOOGLE_API_KEY}"
-            )
-            places_resp = requests.get(places_url).json()
-            
-            for place in places_resp.get('results', []):
-                cafes.append({
-                    'name': place['name'],
-                    'rating': place.get('rating', 'N/A'),
-                    'image_url': get_place_photo(place),
-                    'place_id': place['place_id']
-                })
-    # Sort cafes by rating (descending)
-    sorted_cafes = sorted(
-        cafes, key=lambda x: x['rating'] if isinstance(x['rating'], (int, float)) else 0, reverse=True
-    )
-
-    return render_template("results.html", cafes=sorted_cafes, city=city, radius=radius)
+    return render_template("results.html", cafes=cafes, city=city, radius=radius)
 
 
-def get_place_photo(place):
-    """Return Google Place photo URL or placeholder"""
-    photos = place.get("photos")
-    if photos:
-        photo_ref = photos[0]['photo_reference']
+@cafe_bp.route("/api/cafes/nearby")
+def api_cafes_nearby():
+    """
+    Mobile app version: same search, but returns plain JSON data.
+    Example: /api/cafes/nearby?city=Austin&radius=5000
+    """
+    city = (request.args.get("city") or "").strip()
+    if not city:
+        return jsonify({"error": "Missing city. Use ?city=..."}), 400
+
+    radius = parse_radius(request.args.get("radius"))
+
+    try:
+        cafes, error = find_cafes_near_city(city, radius)
+    except requests.RequestException as e:
+        return jsonify({"error": "Could not reach Google", "detail": str(e)}), 502
+
+    if error:
+        return jsonify({"error": error}), 502
+
+    return jsonify({"city": city, "radius": radius, "count": len(cafes), "cafes": cafes})
+
+
+def get_place_photo(photo_ref):
+    """Return Google Place photo URL or placeholder (used by the web page only)."""
+    if photo_ref:
         return f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={photo_ref}&key={GOOGLE_API_KEY}"
     return "/static/images/placeholder.jpg"
 
