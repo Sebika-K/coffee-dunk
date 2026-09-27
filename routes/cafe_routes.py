@@ -90,6 +90,7 @@ def api_cafe_search():
 
         return jsonify({
             "status": data.get("status"),
+            "error_message": data.get("error_message"),  # Google's reason when something fails
             "results": results
         })
 
