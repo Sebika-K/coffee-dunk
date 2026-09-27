@@ -1,6 +1,7 @@
 import os
 import requests
-from flask import Blueprint, render_template, request, jsonify
+from urllib.parse import quote
+from flask import Blueprint, render_template, request, jsonify, Response
 from .firebase_helpers import get_posts_by_place_id
 from dotenv import load_dotenv
 from firebase_admin import auth as admin_auth
@@ -117,11 +118,55 @@ def api_cafes_nearby():
     return jsonify({"city": city, "radius": radius, "count": len(cafes), "cafes": cafes})
 
 
+PHOTO_URL = "https://maps.googleapis.com/maps/api/place/photo"
+
+
 def get_place_photo(photo_ref):
-    """Return Google Place photo URL or placeholder (used by the web page only)."""
+    """
+    Build the photo address for the web page. It points at OUR server
+    (/api/photo), not Google, so the secret key never reaches the browser.
+    """
     if photo_ref:
-        return f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={photo_ref}&key={GOOGLE_API_KEY}"
+        return f"/api/photo?ref={quote(photo_ref)}"
     return "/static/images/placeholder.jpg"
+
+
+@cafe_bp.route("/api/photo")
+def api_photo():
+    """
+    Photo middleman. The app/browser sends a photo_ref, the server adds the
+    secret key, fetches the image from Google, and passes the image back.
+    Example: /api/photo?ref=Aa-ngMb...&w=400
+    """
+    photo_ref = (request.args.get("ref") or "").strip()
+    if not photo_ref:
+        return jsonify({"error": "Missing photo ref. Use ?ref=..."}), 400
+
+    # Width in pixels: default 400, kept between 50 and 1600 (Google's max)
+    try:
+        width = max(50, min(int(request.args.get("w", 400)), 1600))
+    except ValueError:
+        width = 400
+
+    try:
+        google_resp = requests.get(
+            PHOTO_URL,
+            params={"maxwidth": width, "photo_reference": photo_ref, "key": GOOGLE_API_KEY},
+            timeout=10,
+        )
+    except requests.RequestException:
+        return jsonify({"error": "Could not reach Google"}), 502
+
+    if google_resp.status_code != 200:
+        return jsonify({"error": "Photo not available"}), 404
+
+    return Response(
+        google_resp.content,
+        mimetype=google_resp.headers.get("Content-Type", "image/jpeg"),
+        # Let the phone/browser reuse this photo for a day instead of asking
+        # again - fewer Google requests, faster scrolling.
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 @cafe_bp.route("/api/cafes/search")
