@@ -1,3 +1,11 @@
 secrets/firebase-key.json
 .env
 static/js/firebase-config.js
+
+# macOS system files
+.DS_Store
+Icon?
+
+# Python cache files
+__pycache__/
+*.pyc
