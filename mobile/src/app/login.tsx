@@ -1,3 +1,5 @@
+import { COLORS } from "@/constants/theme";
+import { friendlyError } from "@/lib/authErrors";
 import { auth } from "@/lib/firebase";
 import { FirebaseError } from "firebase/app";
 import { sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
@@ -14,35 +16,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-
-// Colours taken from the web app's login.css, kept in one place
-const COLORS = {
-  plum: "#7D2E4D",
-  sand: "#D8D0CB",
-  fadedWhite: "rgba(252, 251, 251, 0.57)",
-  placeholder: "rgba(114, 35, 35, 0.57)",
-  link: "#0a58ff",
-  error: "#FFD6D6",
-};
-
-// Turn Firebase's error codes into messages a person can understand
-function friendlyError(error: unknown): string {
-  if (error instanceof FirebaseError) {
-    switch (error.code) {
-      case "auth/invalid-credential":
-      case "auth/wrong-password":
-      case "auth/user-not-found":
-        return "Email or password is incorrect.";
-      case "auth/invalid-email":
-        return "That doesn't look like a valid email address.";
-      case "auth/too-many-requests":
-        return "Too many attempts. Please wait a bit and try again.";
-      case "auth/network-request-failed":
-        return "No internet connection. Please try again.";
-    }
-  }
-  return "Something went wrong. Please try again.";
-}
 
 export default function LoginScreen() {
   // STATE: values this screen remembers. When they change, the screen redraws.

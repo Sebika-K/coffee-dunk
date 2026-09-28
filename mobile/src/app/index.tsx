@@ -1,11 +1,6 @@
+import { COLORS } from "@/constants/theme";
 import { Link, Stack } from "expo-router";
 import { ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
-
-// Colours taken from the web app's style.css
-const COLORS = {
-  plum: "#7D2E4D",
-  linkPurple: "#551A8B",
-};
 
 // The landing screen: first thing people see when they open the app
 export default function LandingScreen() {
