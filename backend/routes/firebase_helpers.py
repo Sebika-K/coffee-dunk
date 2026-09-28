@@ -27,38 +27,49 @@ def get_posts_by_cafe(cafe_name):
         } for doc in docs
     ]
 
-def get_posts_by_place_id(place_id):
-    try:
-        posts_ref = db.collection('uploads')
-        #query = posts_ref.where('place_id', '==', place_id)
-        #docs = query.stream()
-        docs = posts_ref.where('place_id', '==', place_id).stream()
-        items = []
-        for snap in docs:
-            d = snap.to_dict() or {}
-            items.append({
-                'id': snap.id,
-                'image_url': d.get('image_url'),
-                'caption': d.get('caption'),
-                'rating': d.get('rating'),
-                'user_id': d.get('user_id'),
-                'cafe_name': d.get('cafe_name'),
-                'place_id': d.get('place_id'),
-                'user': d.get('user'), 
-                'user_avatar': d.get('user_avatar'),
-                'created_at': d.get('created_at'),
-                # Journal fields (Phase 3). Old posts don't have them -> None / []
-                'drink': d.get('drink'),
-                'drink_custom': d.get('drink_custom'),
-                'milk': d.get('milk'),
-                'temperature': d.get('temperature'),
-                'notes': d.get('notes') or []
-            }) 
-        print(f"🔎 get_posts_by_place_id({place_id}) → {len(items)} rows")
-        return items
+def doc_to_post(snap):
+    """Turn one Firestore document into a plain dictionary (a "post")."""
+    d = snap.to_dict() or {}
+    return {
+        'id': snap.id,
+        'image_url': d.get('image_url'),
+        'caption': d.get('caption'),
+        'rating': d.get('rating'),
+        'user_id': d.get('user_id'),
+        'cafe_name': d.get('cafe_name'),
+        'place_id': d.get('place_id'),
+        'user': d.get('user'),
+        'user_avatar': d.get('user_avatar'),
+        'created_at': d.get('created_at'),
+        # Journal fields (Phase 3). Old posts don't have them -> None / []
+        'drink': d.get('drink'),
+        'drink_custom': d.get('drink_custom'),
+        'milk': d.get('milk'),
+        'temperature': d.get('temperature'),
+        'notes': d.get('notes') or [],
+    }
 
+
+def get_posts_where(field, value):
+    """All posts where `field` equals `value`, e.g. get_posts_where('drink', 'latte')."""
+    try:
+        docs = db.collection('uploads').where(field, '==', value).stream()
+        items = [doc_to_post(snap) for snap in docs]
+        print(f"🔎 posts where {field} == {value} → {len(items)} rows")
+        return items
     except Exception as e:
         import traceback; traceback.print_exc()
-        print("❌ Firestore error in get_posts_by_place_id:", e)
+        print(f"❌ Firestore error (posts where {field} == {value}):", e)
         return []
-    #return items
+
+
+def get_posts_by_place_id(place_id):
+    return get_posts_where('place_id', place_id)
+
+
+def get_posts_by_user(user_id):
+    return get_posts_where('user_id', user_id)
+
+
+def get_posts_by_drink(drink):
+    return get_posts_where('drink', drink)

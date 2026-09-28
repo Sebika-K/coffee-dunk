@@ -80,3 +80,70 @@ def top_drinks(posts, limit=3):
     # Best score first; if scores tie, the drink more people rated comes first
     results.sort(key=lambda r: (r["score"], r["count"]), reverse=True)
     return results[:limit]
+
+
+# ---------------------------------------------------------------------------
+# Recommendations (Phase 6)
+# ---------------------------------------------------------------------------
+
+# Only recommend based on a drink you actually LIKE (confidence score at least this)
+MIN_FAVOURITE_SCORE = 3.5
+
+
+def favourite_drink(user_posts):
+    """
+    The user's favourite drink = their best drink by confidence score
+    (so one lucky 5-star doesn't count as a "favourite" - several good ratings do).
+    Returns the drink details, or None if they have no clear favourite yet.
+    """
+    best = top_drinks(user_posts, limit=1)
+    if not best or best[0]["score"] < MIN_FAVOURITE_SCORE:
+        return None
+    return best[0]
+
+
+def recommend_cafes(posts, favourite, exclude_place_ids, exclude_user_id=None, limit=5):
+    """
+    Cafés where OTHER people rated the user's favourite drink highly.
+
+    posts             - posts of that drink, from all cafés
+    favourite         - the drink details (from favourite_drink)
+    exclude_place_ids - cafés the user has already been to (we want NEW places)
+    exclude_user_id   - the user themselves (their own ratings shouldn't recommend to them)
+
+    Returns cafés best first:
+      { "place_id": ..., "cafe_name": ..., "average": 4.7, "count": 3, "score": 4.1 }
+    """
+    wanted = drink_key(favourite)
+
+    # Group ratings by café, for posts of exactly that drink
+    groups = {}
+    names = {}
+    for p in posts:
+        place_id = p.get("place_id")
+        if (
+            drink_key(p) != wanted
+            or not isinstance(p.get("rating"), (int, float))
+            or not place_id
+            or place_id in exclude_place_ids
+            or p.get("user_id") == exclude_user_id
+        ):
+            continue
+        groups.setdefault(place_id, []).append(p["rating"])
+        names.setdefault(place_id, p.get("cafe_name"))
+
+    results = []
+    for place_id, ratings in groups.items():
+        score = confidence_score(ratings, NEUTRAL_RATING)
+        if score <= NEUTRAL_RATING:
+            continue  # only recommend cafés where the drink is rated ABOVE average
+        results.append({
+            "place_id": place_id,
+            "cafe_name": names[place_id],
+            "average": round(sum(ratings) / len(ratings), 2),
+            "count": len(ratings),
+            "score": round(score, 2),
+        })
+
+    results.sort(key=lambda r: (r["score"], r["count"]), reverse=True)
+    return results[:limit]

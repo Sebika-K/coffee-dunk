@@ -10,13 +10,20 @@ and checks the answer is what we expect.
 
 import unittest
 
-from routes.drink_stats import confidence_score, drink_key, top_drinks
+from routes.drink_stats import (
+    confidence_score,
+    drink_key,
+    favourite_drink,
+    recommend_cafes,
+    top_drinks,
+)
 
 
-def post(drink, rating, milk=None, temperature=None, custom=None):
+def post(drink, rating, milk=None, temperature=None, custom=None, place_id=None, user_id=None):
     """Helper: make a fake post with just the fields the stats use."""
     return {"drink": drink, "rating": rating, "milk": milk,
-            "temperature": temperature, "drink_custom": custom}
+            "temperature": temperature, "drink_custom": custom,
+            "place_id": place_id, "cafe_name": place_id, "user_id": user_id}
 
 
 class TestDrinkKey(unittest.TestCase):
@@ -60,6 +67,52 @@ class TestTopDrinks(unittest.TestCase):
         result = top_drinks([post("cortado", 4), post("cortado", 5)])
         self.assertEqual(result[0]["average"], 4.5)
         self.assertEqual(result[0]["count"], 2)
+
+
+class TestFavouriteDrink(unittest.TestCase):
+    def test_favourite_needs_several_good_ratings(self):
+        mine = [post("latte", 5, milk="oat")] * 3 + [post("mocha", 5)]
+        self.assertEqual(favourite_drink(mine)["drink"], "latte")
+
+    def test_no_favourite_if_nothing_is_rated_well(self):
+        mine = [post("latte", 2), post("mocha", 3)]
+        self.assertIsNone(favourite_drink(mine))
+
+
+class TestRecommendCafes(unittest.TestCase):
+    favourite = post("latte", 5, milk="oat")
+
+    def test_recommends_cafes_where_others_love_the_drink(self):
+        posts = [post("latte", 5, milk="oat", place_id="cafeA", user_id="other")] * 3
+        result = recommend_cafes(posts, self.favourite, exclude_place_ids=set())
+        self.assertEqual(result[0]["place_id"], "cafeA")
+
+    def test_skips_cafes_you_have_already_been_to(self):
+        posts = [post("latte", 5, milk="oat", place_id="cafeA", user_id="other")] * 3
+        result = recommend_cafes(posts, self.favourite, exclude_place_ids={"cafeA"})
+        self.assertEqual(result, [])
+
+    def test_ignores_your_own_ratings(self):
+        posts = [post("latte", 5, milk="oat", place_id="cafeA", user_id="me")] * 3
+        result = recommend_cafes(posts, self.favourite, set(), exclude_user_id="me")
+        self.assertEqual(result, [])
+
+    def test_only_the_same_drink_counts(self):
+        # A great PLAIN latte doesn't mean a great OAT latte
+        posts = [post("latte", 5, place_id="cafeA", user_id="other")] * 3
+        self.assertEqual(recommend_cafes(posts, self.favourite, set()), [])
+
+    def test_skips_cafes_where_the_drink_is_rated_badly(self):
+        posts = [post("latte", 2, milk="oat", place_id="cafeA", user_id="other")] * 3
+        self.assertEqual(recommend_cafes(posts, self.favourite, set()), [])
+
+    def test_better_cafe_comes_first(self):
+        posts = (
+            [post("latte", 4, milk="oat", place_id="okCafe", user_id="x")] * 3
+            + [post("latte", 5, milk="oat", place_id="greatCafe", user_id="x")] * 3
+        )
+        result = recommend_cafes(posts, self.favourite, set())
+        self.assertEqual([r["place_id"] for r in result], ["greatCafe", "okCafe"])
 
 
 if __name__ == "__main__":

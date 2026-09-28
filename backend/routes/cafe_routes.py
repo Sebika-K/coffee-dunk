@@ -2,8 +2,8 @@ import os
 import requests
 from urllib.parse import quote
 from flask import Blueprint, render_template, request, jsonify, Response
-from .firebase_helpers import get_posts_by_place_id
-from .drink_stats import top_drinks
+from .firebase_helpers import get_posts_by_place_id, get_posts_by_user, get_posts_by_drink
+from .drink_stats import top_drinks, favourite_drink, recommend_cafes
 from dotenv import load_dotenv
 from firebase_admin import auth as admin_auth
 
@@ -291,3 +291,50 @@ def api_cafe_top_drinks(place_id):
     posts = get_posts_by_place_id(place_id)
     drinks = top_drinks(posts, limit=3)
     return jsonify({"place_id": place_id, "top_drinks": drinks})
+
+
+def get_logged_in_user_id():
+    """
+    Who is making this request? The app sends the user's Firebase ID token
+    in the "Authorization: Bearer <token>" header. We ask Firebase to VERIFY
+    it - a token can't be faked or edited, so this is proof of who they are.
+    Returns the user's id, or None if the token is missing or invalid.
+    """
+    header = request.headers.get("Authorization", "")
+    if not header.startswith("Bearer "):
+        return None
+    token = header[len("Bearer "):]
+    try:
+        return admin_auth.verify_id_token(token)["uid"]
+    except Exception as e:
+        print("❌ Invalid ID token:", e)
+        return None
+
+
+@cafe_bp.route("/api/recommendations")
+def api_recommendations():
+    """
+    "You love X - try these cafés" for the logged-in user (Phase 6).
+    Requires the Authorization header (see get_logged_in_user_id).
+    """
+    user_id = get_logged_in_user_id()
+    if not user_id:
+        return jsonify({"error": "Please log in."}), 401
+
+    # 1) What's their favourite drink?
+    my_posts = get_posts_by_user(user_id)
+    favourite = favourite_drink(my_posts)
+    if not favourite:
+        return jsonify({"favourite": None, "cafes": []})
+
+    # 2) Everyone's posts of that drink, from every café
+    drink_posts = get_posts_by_drink(favourite["drink"])
+
+    # 3) Cafés where others rate it highly, that they haven't been to yet
+    been_to = {p["place_id"] for p in my_posts if p.get("place_id")}
+    cafes = recommend_cafes(drink_posts, favourite, been_to, exclude_user_id=user_id)
+
+    return jsonify({
+        "favourite": {k: favourite[k] for k in ("drink", "drink_custom", "milk", "temperature")},
+        "cafes": cafes,
+    })
