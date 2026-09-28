@@ -1,6 +1,7 @@
 // Your profile: photo, name, stats, bio and all your posts.
 // Rebuilt from the web app's profile.html / profile.css.
 
+import { DiaryCard } from "@/components/DiaryCard";
 import { PostGrid } from "@/components/PostGrid";
 import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
@@ -90,6 +91,7 @@ export default function ProfileScreen() {
       </View>
 
       {bio !== "" && <Text style={styles.bio}>{bio}</Text>}
+      {!isLoading && posts.length > 0 && <DiaryCard stats={stats} />}
       {errorMessage !== "" && <Text style={styles.error}>{errorMessage}</Text>}
       {isLoading && <ActivityIndicator color={COLORS.plum} style={styles.spinner} />}
     </View>
