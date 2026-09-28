@@ -1,6 +1,10 @@
+import { auth } from "@/lib/firebase";
+import { FirebaseError } from "firebase/app";
+import { sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
 import { Stack } from "expo-router";
 import { useState } from "react";
 import {
+  Alert,
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
@@ -18,20 +22,68 @@ const COLORS = {
   fadedWhite: "rgba(252, 251, 251, 0.57)",
   placeholder: "rgba(114, 35, 35, 0.57)",
   link: "#0a58ff",
+  error: "#FFD6D6",
 };
+
+// Turn Firebase's error codes into messages a person can understand
+function friendlyError(error: unknown): string {
+  if (error instanceof FirebaseError) {
+    switch (error.code) {
+      case "auth/invalid-credential":
+      case "auth/wrong-password":
+      case "auth/user-not-found":
+        return "Email or password is incorrect.";
+      case "auth/invalid-email":
+        return "That doesn't look like a valid email address.";
+      case "auth/too-many-requests":
+        return "Too many attempts. Please wait a bit and try again.";
+      case "auth/network-request-failed":
+        return "No internet connection. Please try again.";
+    }
+  }
+  return "Something went wrong. Please try again.";
+}
 
 export default function LoginScreen() {
   // STATE: values this screen remembers. When they change, the screen redraws.
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Only allow logging in once both fields have something in them
-  const canSubmit = email.trim() !== "" && password !== "";
+  const [isLoading, setIsLoading] = useState(false); // true while waiting for Firebase
+  const [errorMessage, setErrorMessage] = useState(""); // shown in the card when not empty
 
-  function handleLogin() {
-    // For now, just prove the screen knows what was typed.
-    // (Never log passwords - only the email.)
-    console.log("Login pressed with email:", email);
+  // Only allow logging in once both fields are filled, and not while already trying
+  const canSubmit = email.trim() !== "" && password !== "" && !isLoading;
+
+  async function handleLogin() {
+    setErrorMessage("");
+    setIsLoading(true);
+    try {
+      // Ask Firebase to check the email + password. `await` pauses here
+      // until Firebase answers (it has to go over the internet).
+      const result = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const name = result.user.displayName || result.user.email;
+      Alert.alert("Welcome back!", `Logged in as ${name}`);
+    } catch (error) {
+      console.log("Login failed:", error instanceof FirebaseError ? error.code : error);
+      setErrorMessage(friendlyError(error));
+    } finally {
+      // Runs whether it worked or failed
+      setIsLoading(false);
+    }
+  }
+
+  async function handleForgotPassword() {
+    if (email.trim() === "") {
+      setErrorMessage("Type your email above first, then tap Forgot Password.");
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      Alert.alert("Check your email", "If an account exists, a reset link is on its way.");
+    } catch (error) {
+      setErrorMessage(friendlyError(error));
+    }
   }
 
   return (
@@ -70,7 +122,9 @@ export default function LoginScreen() {
             onChangeText={setPassword}
           />
 
-          <Pressable style={styles.forgotButton}>
+          {errorMessage !== "" && <Text style={styles.errorText}>{errorMessage}</Text>}
+
+          <Pressable style={styles.forgotButton} onPress={handleForgotPassword}>
             <Text style={styles.linkText}>Forgot Password?</Text>
           </Pressable>
 
@@ -83,7 +137,7 @@ export default function LoginScreen() {
               !canSubmit && styles.loginButtonDisabled,
             ]}
           >
-            <Text style={styles.loginButtonText}>Login</Text>
+            <Text style={styles.loginButtonText}>{isLoading ? "Logging in…" : "Login"}</Text>
           </Pressable>
 
           <View style={styles.signupRow}>
@@ -125,6 +179,11 @@ const styles = StyleSheet.create({
     marginTop: 30,
     marginBottom: 20,
   },
+  errorText: {
+    color: COLORS.error,
+    fontSize: 14,
+    marginTop: 12,
+  },
   forgotButton: {
     alignSelf: "flex-end", // push to the right edge of the card
     marginTop: 10,
@@ -137,7 +196,8 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     alignSelf: "center",
-    width: 122,
+    minWidth: 122,
+    paddingHorizontal: 12,
     height: 44,
     borderWidth: 1,
     borderColor: COLORS.sand,
