@@ -6,6 +6,7 @@ import { Post } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { fetchFriendIds } from "@/lib/friends";
 import { fetchFeed } from "@/lib/posts";
+import { fetchSavedIds, savePost, unsavePost } from "@/lib/saved";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
@@ -26,6 +27,7 @@ export default function FeedScreen() {
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [friendCount, setFriendCount] = useState(0);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set()); // posts I've saved
   const [isLoading, setIsLoading] = useState(true); // first load
   const [isRefreshing, setIsRefreshing] = useState(false); // pull-to-refresh
   const [errorMessage, setErrorMessage] = useState("");
@@ -33,8 +35,12 @@ export default function FeedScreen() {
   const load = useCallback(async () => {
     if (!user) return;
     try {
-      const friendIds = await fetchFriendIds(user.uid);
+      const [friendIds, saved] = await Promise.all([
+        fetchFriendIds(user.uid),
+        fetchSavedIds(user.uid).catch(() => []), // saves are a bonus - never break the feed
+      ]);
       setFriendCount(friendIds.length);
+      setSavedIds(new Set(saved));
       // My posts + my friends' posts
       setPosts(await fetchFeed([user.uid, ...friendIds]));
       setErrorMessage("");
@@ -52,6 +58,30 @@ export default function FeedScreen() {
       load();
     }, [load])
   );
+
+  // Save / unsave instantly, then store it (undo if storing fails)
+  async function toggleSave(postId: string) {
+    if (!user) return;
+    const wasSaved = savedIds.has(postId);
+    setSavedIds((current) => {
+      const next = new Set(current); // a NEW set - never edit the old one
+      if (wasSaved) next.delete(postId);
+      else next.add(postId);
+      return next;
+    });
+    try {
+      if (wasSaved) await unsavePost(user.uid, postId);
+      else await savePost(user.uid, postId);
+    } catch (error) {
+      console.log("Save failed:", error);
+      setSavedIds((current) => {
+        const undo = new Set(current);
+        if (wasSaved) undo.add(postId);
+        else undo.delete(postId);
+        return undo;
+      });
+    }
+  }
 
   // Pull down to refresh
   async function handleRefresh() {
@@ -95,7 +125,14 @@ export default function FeedScreen() {
       <FlatList
         data={posts}
         keyExtractor={(post) => post.id}
-        renderItem={({ item }) => <FeedCard post={item} />}
+        renderItem={({ item }) => (
+          <FeedCard
+            post={item}
+            // You can't save your own posts - only friends'
+            isSaved={savedIds.has(item.id)}
+            onToggleSave={item.user_id === user?.uid ? undefined : () => toggleSave(item.id)}
+          />
+        )}
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
         contentContainerStyle={styles.list}

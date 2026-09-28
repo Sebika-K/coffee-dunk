@@ -3,6 +3,7 @@
 // and every post has its own address: /post/<postId>
 
 import { RecipeCard } from "@/components/RecipeCard";
+import { SaveButton } from "@/components/SaveButton";
 import { StarRating } from "@/components/StarRating";
 import { brewMethodLabel, describeDrink, tastingNoteLabel } from "@/constants/drinks";
 import { COLORS } from "@/constants/theme";
@@ -10,6 +11,7 @@ import { Post } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { avatarSource, formatDate } from "@/lib/format";
 import { deletePost, fetchPost } from "@/lib/posts";
+import { isPostSaved, savePost, unsavePost } from "@/lib/saved";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
@@ -26,6 +28,28 @@ export default function PostScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
+  // Is this post in my "Want to try"?
+  useEffect(() => {
+    if (!user) return;
+    isPostSaved(user.uid, postId)
+      .then(setIsSaved)
+      .catch(() => {});
+  }, [user, postId]);
+
+  async function toggleSave() {
+    if (!user) return;
+    const wasSaved = isSaved;
+    setIsSaved(!wasSaved); // instant
+    try {
+      if (wasSaved) await unsavePost(user.uid, postId);
+      else await savePost(user.uid, postId);
+    } catch (error) {
+      console.log("Save failed:", error);
+      setIsSaved(wasSaved); // undo
+    }
+  }
 
   // Load this one post when the page opens
   useEffect(() => {
@@ -86,6 +110,11 @@ export default function PostScreen() {
         <Pressable onPress={() => router.back()} style={styles.iconButton} accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={24} color={COLORS.plum} />
         </Pressable>
+        {post && !isMine && (
+          <View style={styles.iconButton}>
+            <SaveButton isSaved={isSaved} onToggle={toggleSave} size={24} />
+          </View>
+        )}
         {isMine && (
           <Pressable
             onPress={confirmDelete}

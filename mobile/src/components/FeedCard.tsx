@@ -1,5 +1,6 @@
 // One post in the friends feed: photo first, then who / what / where.
 
+import { SaveButton } from "@/components/SaveButton";
 import { StarRating } from "@/components/StarRating";
 import { brewMethodLabel, describeDrink, tastingNoteLabel } from "@/constants/drinks";
 import { COLORS } from "@/constants/theme";
@@ -12,9 +13,12 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type Props = {
   post: Post;
+  // Leave these out to hide the save button (e.g. on your own posts)
+  isSaved?: boolean;
+  onToggleSave?: () => void;
 };
 
-export function FeedCard({ post }: Props) {
+export function FeedCard({ post, isSaved = false, onToggleSave }: Props) {
   const drinkName = describeDrink(post);
 
   function openPost() {
@@ -38,6 +42,7 @@ export function FeedCard({ post }: Props) {
           {post.user ?? "Anon"}
         </Text>
         {post.created_at && <Text style={styles.time}>{formatTimeAgo(post.created_at)}</Text>}
+        {onToggleSave && <SaveButton isSaved={isSaved} onToggle={onToggleSave} />}
       </View>
 
       {/* The coffee */}

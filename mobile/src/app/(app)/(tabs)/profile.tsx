@@ -2,6 +2,7 @@
 // Rebuilt from the web app's profile.html / profile.css.
 
 import { CafesToTry } from "@/components/CafesToTry";
+import { ChoiceChips } from "@/components/Chips";
 import { DiaryCard } from "@/components/DiaryCard";
 import { PostGrid } from "@/components/PostGrid";
 import { COLORS } from "@/constants/theme";
@@ -9,6 +10,7 @@ import { fetchRecommendations, Post, Recommendations } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { fetchMyFriends } from "@/lib/friends";
 import { fetchUserBio, fetchUserPosts } from "@/lib/posts";
+import { fetchSavedPosts } from "@/lib/saved";
 import { calculateStats, formatRating } from "@/lib/stats";
 import { Ionicons } from "@expo/vector-icons";
 import { User } from "firebase/auth";
@@ -26,6 +28,8 @@ export default function ProfileScreen() {
   const [bio, setBio] = useState("");
   const [recommendations, setRecommendations] = useState<Recommendations | null>(null);
   const [requestCount, setRequestCount] = useState(0); // friend requests waiting for me
+  const [savedPosts, setSavedPosts] = useState<Post[]>([]);
+  const [view, setView] = useState<"mine" | "saved">("mine"); // which grid to show
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -40,7 +44,7 @@ export default function ProfileScreen() {
         try {
           // Load everything at the SAME time. Recommendations are a bonus:
           // if the backend is off or fails, the profile still works (null = hide the card).
-          const [myPosts, myBio, myRecommendations, myFriends] = await Promise.all([
+          const [myPosts, myBio, myRecommendations, myFriends, mySaved] = await Promise.all([
             fetchUserPosts(userId),
             fetchUserBio(userId),
             fetchRecommendations(signedInUser).catch((error) => {
@@ -48,12 +52,14 @@ export default function ProfileScreen() {
               return null;
             }),
             fetchMyFriends(userId).catch(() => null), // only for the request badge
+            fetchSavedPosts(userId).catch(() => []), // "Want to try"
           ]);
           if (isActive) {
             setPosts(myPosts);
             setBio(myBio);
             setRecommendations(myRecommendations);
             setRequestCount(myFriends?.incoming.length ?? 0);
+            setSavedPosts(mySaved);
             setErrorMessage("");
           }
         } catch (error) {
@@ -123,6 +129,18 @@ export default function ProfileScreen() {
       {bio !== "" && <Text style={styles.bio}>{bio}</Text>}
       {!isLoading && posts.length > 0 && <DiaryCard stats={stats} />}
       {!isLoading && <CafesToTry recommendations={recommendations} />}
+
+      {/* Switch the grid below between my posts and my saved ones */}
+      <View style={styles.viewSwitch}>
+        <ChoiceChips
+          options={[
+            { id: "mine", label: `My coffee (${posts.length})` },
+            { id: "saved", label: `🔖 Want to try (${savedPosts.length})` },
+          ]}
+          selected={view}
+          onChange={(value) => value && setView(value)}
+        />
+      </View>
       {errorMessage !== "" && <Text style={styles.error}>{errorMessage}</Text>}
       {isLoading && <ActivityIndicator color={COLORS.plum} style={styles.spinner} />}
     </View>
@@ -135,12 +153,18 @@ export default function ProfileScreen() {
       resizeMode="cover"
     >
       <PostGrid
-        posts={posts}
+        posts={view === "mine" ? posts : savedPosts}
         onPressPost={(post) =>
           router.push({ pathname: "/post/[postId]", params: { postId: post.id } })
         }
         header={header}
-        emptyText={isLoading ? "" : "No posts yet. Tap + to share your first coffee!"}
+        emptyText={
+          isLoading
+            ? ""
+            : view === "mine"
+            ? "No posts yet. Tap + to share your first coffee!"
+            : "Nothing saved yet. Tap 🔖 on a friend's post to save it here."
+        }
       />
 
       {/* Floating "+" button: new post (you'll choose the café on the upload screen) */}
@@ -191,6 +215,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  viewSwitch: {
+    marginTop: 16,
   },
   badge: {
     position: "absolute",
