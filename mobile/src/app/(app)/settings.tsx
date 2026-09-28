@@ -34,7 +34,8 @@ export default function SettingsScreen() {
   const [bio, setBio] = useState("");
   const [savedBio, setSavedBio] = useState(""); // what's in the database, to spot changes
   const [isSaving, setIsSaving] = useState(false);
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  // A newly picked photo that hasn't been saved yet (null = no new photo)
+  const [newPhotoUri, setNewPhotoUri] = useState<string | null>(null);
 
   // Fill in the current bio when the screen opens
   useEffect(() => {
@@ -49,28 +50,20 @@ export default function SettingsScreen() {
 
   const usernameChanged = username.trim() !== (displayName ?? "");
   const bioChanged = bio.trim() !== savedBio;
-  const canSave = (usernameChanged || bioChanged) && username.trim() !== "" && !isSaving;
+  const photoChanged = newPhotoUri !== null;
+  const canSave =
+    (usernameChanged || bioChanged || photoChanged) && username.trim() !== "" && !isSaving;
 
+  // Picking a photo only PREVIEWS it - nothing is uploaded until you tap Save,
+  // just like the username and bio. Going back without saving = no change.
   async function handleChangePhoto() {
-    if (!user) return;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1], // square, for the round profile picture
       quality: 0.6,
     });
-    if (result.canceled) return;
-
-    setIsUploadingPhoto(true);
-    try {
-      await saveProfilePhoto(user, result.assets[0].uri);
-      refreshUser(); // make the nav pill + profile show the new photo
-    } catch (error) {
-      console.log("Photo upload failed:", error);
-      Alert.alert("Couldn't change photo", "Something went wrong. Please try again.");
-    } finally {
-      setIsUploadingPhoto(false);
-    }
+    if (!result.canceled) setNewPhotoUri(result.assets[0].uri);
   }
 
   async function handleSave() {
@@ -78,12 +71,13 @@ export default function SettingsScreen() {
     setIsSaving(true);
     try {
       // Only save what actually changed
+      if (photoChanged) await saveProfilePhoto(user, newPhotoUri);
       if (usernameChanged) await saveUsername(user, username.trim());
       if (bioChanged) {
         await saveBio(user.uid, bio.trim());
         setSavedBio(bio.trim());
       }
-      refreshUser();
+      refreshUser(); // make the nav pill + profile show the new name/photo
       router.back();
     } catch (error) {
       console.log("Save failed:", error);
@@ -100,7 +94,10 @@ export default function SettingsScreen() {
     ]);
   }
 
-  const avatar = photoURL
+  // Show the new photo if one was picked, otherwise the current one
+  const avatar = newPhotoUri
+    ? { uri: newPhotoUri }
+    : photoURL
     ? { uri: photoURL }
     : require("@/assets/images/default-avatar.jpg");
 
@@ -130,13 +127,11 @@ export default function SettingsScreen() {
         automaticallyAdjustKeyboardInsets
       >
         {/* Profile photo */}
-        <Pressable style={styles.photoArea} onPress={handleChangePhoto} disabled={isUploadingPhoto}>
+        <Pressable style={styles.photoArea} onPress={handleChangePhoto} disabled={isSaving}>
           <Image source={avatar} style={styles.avatar} contentFit="cover" />
-          {isUploadingPhoto ? (
-            <ActivityIndicator color={COLORS.plum} />
-          ) : (
-            <Text style={styles.changePhoto}>Change photo</Text>
-          )}
+          <Text style={styles.changePhoto}>
+            {photoChanged ? "New photo — tap Save to keep it" : "Change photo"}
+          </Text>
         </Pressable>
 
         {/* Username */}
