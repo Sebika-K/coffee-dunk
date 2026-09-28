@@ -1,10 +1,8 @@
 import { COLORS } from "@/constants/theme";
 import { useAuth } from "@/lib/AuthContext";
-import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
-// Temporary home screen
+// Temporary home screen - the real café search is built in step 2.5
 export default function SearchScreen() {
   const { user } = useAuth();
   const name = user?.displayName || user?.email;
@@ -13,10 +11,6 @@ export default function SearchScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Hi, {name} ☕</Text>
       <Text style={styles.subtitle}>Café search coming in step 2.5</Text>
-
-      <Pressable style={styles.button} onPress={() => signOut(auth)}>
-        <Text style={styles.buttonText}>Log out</Text>
-      </Pressable>
     </View>
   );
 }
@@ -36,16 +30,5 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: COLORS.plum,
-  },
-  button: {
-    marginTop: 20,
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    backgroundColor: COLORS.plum,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
   },
 });

@@ -1,11 +1,14 @@
-import { Stack } from "expo-router";
+import { NavPill } from "@/components/NavPill";
+import { Tabs } from "expo-router";
 
 // Screens inside the app (only for logged-in users).
-// The bottom nav pill will be added here in step 2.4b.
+// Tabs keep each screen alive when you switch away, so e.g. your search
+// results are still there when you come back from your profile.
 export default function AppLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="search" />
-    </Stack>
+    <Tabs screenOptions={{ headerShown: false }} tabBar={() => <NavPill />}>
+      <Tabs.Screen name="search" />
+      <Tabs.Screen name="profile" />
+    </Tabs>
   );
 }
