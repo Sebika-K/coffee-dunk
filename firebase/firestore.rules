@@ -1,0 +1,96 @@
+// Firestore security rules for Coffee Dunk.
+// These run on Google's servers and check EVERY request from the app.
+// (The Flask backend uses the Admin SDK, which skips these rules.)
+//
+// To apply: Firebase Console -> Firestore Database -> Rules -> paste -> Publish.
+// Keep this file in git so every change to the rules is recorded.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helpers -----------------------------------------------------------
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isMe(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    // --- Posts -------------------------------------------------------------
+    match /uploads/{postId} {
+      // Any logged-in user can see posts
+      allow read: if signedIn();
+      // You can only create posts as YOURSELF
+      allow create: if signedIn() && request.resource.data.user_id == request.auth.uid;
+      // Only the owner can edit or delete a post
+      allow update, delete: if isMe(resource.data.user_id);
+    }
+
+    // --- Likes on a post (Phase 7.5) ---------------------------------------
+    // uploads/<postId>/likes/<userId>  { created_at }
+    // One per person per post (the document id is the liker's id).
+    match /uploads/{postId}/likes/{userId} {
+      // You can see your OWN like; the POSTER can see everyone's.
+      // (No public like counts - that's the "gentle" part.)
+      allow read: if isMe(userId)
+        || (signedIn()
+            && get(/databases/$(database)/documents/uploads/$(postId)).data.user_id == request.auth.uid);
+
+      // You can only like as yourself, and the document may contain nothing else
+      allow create: if isMe(userId)
+        && request.resource.data.keys().hasOnly(['created_at']);
+
+      // You can unlike (remove your own like)
+      allow delete: if isMe(userId);
+    }
+
+    // --- Public profiles (username, photo, bio) ----------------------------
+    match /users/{userId} {
+      // Logged-in users can see profiles (needed to find friends)
+      allow read: if signedIn();
+      // Only you can change your own profile
+      allow write: if isMe(userId);
+    }
+
+    // --- "Want to try" saves (private to each user) ------------------------
+    // users/<me>/saved/<postId> - only I can see or change my saved list.
+    // (Rules for users/{userId} above do NOT cover subcollections, so the
+    //  saved list needs its own rule.)
+    match /users/{userId}/saved/{postId} {
+      allow read, write: if isMe(userId);
+    }
+
+    // --- Friendships (one document per pair of people) ----------------------
+    match /friendships/{pairId} {
+      // You can see a friendship only if you're in it.
+      // (resource == null: checking a pair that doesn't exist yet is allowed,
+      //  so the app can tell "not friends" apart from "no permission".)
+      allow read: if signedIn()
+        && (resource == null || request.auth.uid in resource.data.members);
+
+      // Sending a request: must be from YOU, include you, be between exactly
+      // two people, start as "pending", and use the correct pair id.
+      allow create: if signedIn()
+        && request.resource.data.requested_by == request.auth.uid
+        && request.auth.uid in request.resource.data.members
+        && request.resource.data.members.size() == 2
+        && request.resource.data.status == 'pending'
+        && (pairId == request.resource.data.members[0] + '_' + request.resource.data.members[1]
+            || pairId == request.resource.data.members[1] + '_' + request.resource.data.members[0]);
+
+      // Accepting: only the person who RECEIVED the request, only from
+      // "pending" to "accepted", and nothing else may change.
+      allow update: if signedIn()
+        && request.auth.uid in resource.data.members
+        && request.auth.uid != resource.data.requested_by
+        && resource.data.status == 'pending'
+        && request.resource.data.status == 'accepted'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+
+      // Either person can remove it (decline, cancel, or unfriend)
+      allow delete: if signedIn() && request.auth.uid in resource.data.members;
+    }
+  }
+}
