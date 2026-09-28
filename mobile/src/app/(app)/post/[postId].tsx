@@ -2,8 +2,9 @@
 // rating, café, caption. Replaces the old popup - there's more room here,
 // and every post has its own address: /post/<postId>
 
+import { RecipeCard } from "@/components/RecipeCard";
 import { StarRating } from "@/components/StarRating";
-import { describeDrink, tastingNoteLabel } from "@/constants/drinks";
+import { brewMethodLabel, describeDrink, tastingNoteLabel } from "@/constants/drinks";
 import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
@@ -140,8 +141,19 @@ export default function PostScreen() {
             </View>
           )}
 
-          {/* Where - tap to open the café page */}
-          {post.cafe_name && (
+          {/* Where: made at home... */}
+          {post.source === "home" && (
+            <View style={styles.cafeRow}>
+              <Ionicons name="home-outline" size={18} color={COLORS.plum} />
+              <Text style={styles.cafeName}>
+                Made at home
+                {post.recipe ? ` · ${brewMethodLabel(post.recipe.method)}` : ""}
+              </Text>
+            </View>
+          )}
+
+          {/* ...or at a café - tap to open the café page */}
+          {post.source === "cafe" && post.cafe_name && (
             <Pressable onPress={openCafe} disabled={!post.place_id} style={styles.cafeRow}>
               <Ionicons name="location-outline" size={18} color={COLORS.plum} />
               <Text style={styles.cafeName}>{post.cafe_name}</Text>
@@ -152,6 +164,9 @@ export default function PostScreen() {
           )}
 
           {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
+
+          {/* The full recipe for homemade coffee */}
+          {post.source === "home" && post.recipe && <RecipeCard recipe={post.recipe} />}
         </ScrollView>
       )}
     </View>

@@ -1,7 +1,7 @@
 // One post in the friends feed: photo first, then who / what / where.
 
 import { StarRating } from "@/components/StarRating";
-import { describeDrink, tastingNoteLabel } from "@/constants/drinks";
+import { brewMethodLabel, describeDrink, tastingNoteLabel } from "@/constants/drinks";
 import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
 import { avatarSource, formatTimeAgo } from "@/lib/format";
@@ -58,8 +58,19 @@ export function FeedCard({ post }: Props) {
         <StarRating value={post.rating ?? 0} size={16} />
       </View>
 
-      {/* Where - its own tap target, opens the café page */}
-      {post.cafe_name && (
+      {/* Where: made at home (with a hint that there's a recipe inside)... */}
+      {post.source === "home" && (
+        <View style={styles.cafeRow}>
+          <Ionicons name="home-outline" size={15} color={COLORS.plum} />
+          <Text style={styles.cafeName} numberOfLines={1}>
+            Made at home
+            {post.recipe ? ` · ${brewMethodLabel(post.recipe.method)} · recipe inside` : ""}
+          </Text>
+        </View>
+      )}
+
+      {/* ...or at a café - its own tap target, opens the café page */}
+      {post.source === "cafe" && post.cafe_name && (
         <Pressable onPress={openCafe} disabled={!post.place_id} style={styles.cafeRow} hitSlop={6}>
           <Ionicons name="location-outline" size={15} color={COLORS.plum} />
           <Text style={styles.cafeName} numberOfLines={1}>

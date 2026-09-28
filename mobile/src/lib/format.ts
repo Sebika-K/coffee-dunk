@@ -30,3 +30,11 @@ export function formatTimeAgo(isoDate: string): string {
   if (days < 7) return `${days}d ago`;
   return formatDate(isoDate);
 }
+
+// Coffee-to-water ratio, e.g. 18 g coffee + 250 ml water -> "1:13.9"
+// (baristas describe recipes this way). null if either amount is missing.
+export function formatRatio(coffeeGrams: number | null, waterMl: number | null): string | null {
+  if (!coffeeGrams || !waterMl) return null;
+  const ratio = (waterMl / coffeeGrams).toFixed(1).replace(/\.0$/, ""); // "15.0" -> "15"
+  return `1:${ratio}`;
+}
