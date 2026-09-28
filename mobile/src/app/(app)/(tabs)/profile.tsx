@@ -84,6 +84,13 @@ export default function ProfileScreen() {
         </Text>
         <Pressable
           style={styles.menuButton}
+          onPress={() => router.push("/find-friends")}
+          accessibilityLabel="Find friends"
+        >
+          <Ionicons name="person-add-outline" size={20} color={COLORS.plum} />
+        </Pressable>
+        <Pressable
+          style={styles.menuButton}
           onPress={() => router.push("/settings")}
           accessibilityLabel="Settings"
         >
