@@ -4,6 +4,7 @@ import { COLORS } from "@/constants/theme";
 import { useAuth } from "@/lib/AuthContext";
 import { avatarSource } from "@/lib/format";
 import {
+  acceptFriendRequest,
   FriendState,
   getFriendState,
   PublicProfile,
@@ -67,6 +68,18 @@ export default function FindFriendsScreen() {
     }
   }
 
+  async function handleAccept(person: Result) {
+    if (!user) return;
+    updateState(person.id, "friends"); // optimistic, like handleAdd
+    try {
+      await acceptFriendRequest(user.uid, person.id);
+    } catch (error) {
+      console.log("Accept failed:", error);
+      updateState(person.id, "incoming");
+      setErrorMessage("Couldn't accept the request. Please try again.");
+    }
+  }
+
   // Change one person's state in the list (a NEW list - never edit the old one)
   function updateState(personId: string, state: FriendState) {
     setResults((current) =>
@@ -121,7 +134,11 @@ export default function FindFriendsScreen() {
             <Text style={styles.username} numberOfLines={1}>
               {item.username}
             </Text>
-            <StateButton state={item.state} onAdd={() => handleAdd(item)} />
+            <StateButton
+              state={item.state}
+              onAdd={() => handleAdd(item)}
+              onAccept={() => handleAccept(item)}
+            />
           </View>
         )}
       />
@@ -130,7 +147,15 @@ export default function FindFriendsScreen() {
 }
 
 // The button/label on the right of each person
-function StateButton({ state, onAdd }: { state: FriendState; onAdd: () => void }) {
+function StateButton({
+  state,
+  onAdd,
+  onAccept,
+}: {
+  state: FriendState;
+  onAdd: () => void;
+  onAccept: () => void;
+}) {
   if (state === "none") {
     return (
       <Pressable style={styles.addButton} onPress={onAdd}>
@@ -139,9 +164,15 @@ function StateButton({ state, onAdd }: { state: FriendState; onAdd: () => void }
       </Pressable>
     );
   }
+  if (state === "incoming") {
+    return (
+      <Pressable style={styles.addButton} onPress={onAccept}>
+        <Text style={styles.addText}>Accept</Text>
+      </Pressable>
+    );
+  }
   const labels = {
     requested: "Requested",
-    incoming: "Wants to be friends",
     friends: "Friends ✓",
   };
   return <Text style={styles.stateText}>{labels[state]}</Text>;

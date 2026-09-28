@@ -7,6 +7,7 @@ import { PostGrid } from "@/components/PostGrid";
 import { COLORS } from "@/constants/theme";
 import { fetchRecommendations, Post, Recommendations } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
+import { fetchMyFriends } from "@/lib/friends";
 import { fetchUserBio, fetchUserPosts } from "@/lib/posts";
 import { calculateStats, formatRating } from "@/lib/stats";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,6 +25,7 @@ export default function ProfileScreen() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [bio, setBio] = useState("");
   const [recommendations, setRecommendations] = useState<Recommendations | null>(null);
+  const [requestCount, setRequestCount] = useState(0); // friend requests waiting for me
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -38,18 +40,20 @@ export default function ProfileScreen() {
         try {
           // Load everything at the SAME time. Recommendations are a bonus:
           // if the backend is off or fails, the profile still works (null = hide the card).
-          const [myPosts, myBio, myRecommendations] = await Promise.all([
+          const [myPosts, myBio, myRecommendations, myFriends] = await Promise.all([
             fetchUserPosts(userId),
             fetchUserBio(userId),
             fetchRecommendations(signedInUser).catch((error) => {
               console.log("Recommendations failed:", error);
               return null;
             }),
+            fetchMyFriends(userId).catch(() => null), // only for the request badge
           ]);
           if (isActive) {
             setPosts(myPosts);
             setBio(myBio);
             setRecommendations(myRecommendations);
+            setRequestCount(myFriends?.incoming.length ?? 0);
             setErrorMessage("");
           }
         } catch (error) {
@@ -84,10 +88,16 @@ export default function ProfileScreen() {
         </Text>
         <Pressable
           style={styles.menuButton}
-          onPress={() => router.push("/find-friends")}
-          accessibilityLabel="Find friends"
+          onPress={() => router.push("/friends")}
+          accessibilityLabel={requestCount > 0 ? `Friends, ${requestCount} new requests` : "Friends"}
         >
-          <Ionicons name="person-add-outline" size={20} color={COLORS.plum} />
+          <Ionicons name="people-outline" size={21} color={COLORS.plum} />
+          {/* Little plum badge when someone wants to be friends */}
+          {requestCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{requestCount}</Text>
+            </View>
+          )}
         </Pressable>
         <Pressable
           style={styles.menuButton}
@@ -181,6 +191,23 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  badge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    backgroundColor: COLORS.plum,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeText: {
+    color: "white",
+    fontSize: 11,
+    fontWeight: "700",
   },
   profileRow: {
     flexDirection: "row",

@@ -13,6 +13,7 @@ export default function AppLayout() {
       <Stack.Screen name="settings" />
       <Stack.Screen name="post/[postId]" />
       <Stack.Screen name="find-friends" />
+      <Stack.Screen name="friends" />
     </Stack>
   );
 }

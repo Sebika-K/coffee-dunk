@@ -14,6 +14,7 @@
 import { db } from "@/lib/firebase";
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -22,6 +23,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
 } from "firebase/firestore";
 
@@ -89,4 +91,65 @@ export async function sendFriendRequest(myId: string, otherId: string) {
     status: "pending",
     created_at: serverTimestamp(),
   });
+}
+
+// Accept a request someone sent me
+export async function acceptFriendRequest(myId: string, otherId: string) {
+  await updateDoc(doc(db, "friendships", pairId(myId, otherId)), { status: "accepted" });
+}
+
+// Remove the friendship document: used to DECLINE a request, CANCEL one I sent,
+// or UNFRIEND someone. It's the same action in all three cases.
+export async function removeFriendship(myId: string, otherId: string) {
+  await deleteDoc(doc(db, "friendships", pairId(myId, otherId)));
+}
+
+// One person's public profile
+async function fetchProfile(userId: string): Promise<PublicProfile> {
+  const snap = await getDoc(doc(db, "users", userId));
+  const data = snap.data();
+  return {
+    id: userId,
+    username: data?.username ?? "coffee-lover",
+    photo_url: data?.photo_url ?? null,
+  };
+}
+
+export type MyFriends = {
+  friends: PublicProfile[]; // accepted
+  incoming: PublicProfile[]; // requests waiting for ME to answer
+  sent: PublicProfile[]; // requests I sent that they haven't answered
+};
+
+// Everyone I'm connected to, sorted into friends / incoming / sent
+export async function fetchMyFriends(myId: string): Promise<MyFriends> {
+  // "array-contains": every friendship where I'm one of the two members
+  const snapshot = await getDocs(
+    query(collection(db, "friendships"), where("members", "array-contains", myId))
+  );
+
+  const friendIds: string[] = [];
+  const incomingIds: string[] = [];
+  const sentIds: string[] = [];
+
+  for (const docSnap of snapshot.docs) {
+    const f = docSnap.data() as Friendship;
+    const otherId = f.members.find((id) => id !== myId);
+    if (!otherId) continue;
+
+    if (f.status === "accepted") friendIds.push(otherId);
+    else if (f.requested_by === myId) sentIds.push(otherId);
+    else incomingIds.push(otherId);
+  }
+
+  // Load everyone's name + photo at the same time
+  const [friends, incoming, sent] = await Promise.all([
+    Promise.all(friendIds.map(fetchProfile)),
+    Promise.all(incomingIds.map(fetchProfile)),
+    Promise.all(sentIds.map(fetchProfile)),
+  ]);
+
+  // Alphabetical friends list
+  friends.sort((a, b) => a.username.localeCompare(b.username));
+  return { friends, incoming, sent };
 }
