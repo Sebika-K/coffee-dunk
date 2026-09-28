@@ -3,6 +3,7 @@ import requests
 from urllib.parse import quote
 from flask import Blueprint, render_template, request, jsonify, Response
 from .firebase_helpers import get_posts_by_place_id
+from .drink_stats import top_drinks
 from dotenv import load_dotenv
 from firebase_admin import auth as admin_auth
 
@@ -279,3 +280,14 @@ def api_cafe_posts(place_id):
             p["created_at"] = p["created_at"].isoformat()
 
     return jsonify({"place_id": place_id, "count": len(posts), "posts": posts})
+
+
+@cafe_bp.route("/api/cafes/<place_id>/top-drinks")
+def api_cafe_top_drinks(place_id):
+    """
+    The best-rated drinks at one café, based on everyone's posts (Phase 5).
+    Example: /api/cafes/ChIJOzVa9gSLj4ARFQqljssXWUI/top-drinks
+    """
+    posts = get_posts_by_place_id(place_id)
+    drinks = top_drinks(posts, limit=3)
+    return jsonify({"place_id": place_id, "top_drinks": drinks})
