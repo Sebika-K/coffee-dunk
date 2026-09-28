@@ -4,16 +4,49 @@
 
 import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
+import { useAuth } from "@/lib/AuthContext";
+import { deletePost } from "@/lib/posts";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
 type Props = {
   post: Post | null; // the post to show, or null when the popup is closed
   onClose: () => void;
+  onDeleted?: (post: Post) => void; // optional: tells the screen a post was deleted
 };
 
-export function PostModal({ post, onClose }: Props) {
+export function PostModal({ post, onClose, onDeleted }: Props) {
+  const { user } = useAuth();
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Only the person who posted it can delete it
+  const isMine = post !== null && user !== null && post.user_id === user.uid;
+
+  function confirmDelete() {
+    if (!post) return;
+    // Ask first - deleting can't be undone
+    Alert.alert("Delete this post?", "This can't be undone.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: () => handleDelete(post) },
+    ]);
+  }
+
+  async function handleDelete(postToDelete: Post) {
+    setIsDeleting(true);
+    try {
+      await deletePost(postToDelete);
+      onDeleted?.(postToDelete); // let the screen remove it from its grid
+      onClose();
+    } catch (error) {
+      console.log("Delete failed:", error);
+      Alert.alert("Couldn't delete", "Something went wrong. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   return (
     <Modal
       visible={post !== null}
@@ -49,6 +82,24 @@ export function PostModal({ post, onClose }: Props) {
 
             {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
             <Text style={styles.rating}>Rating: {post.rating ?? "–"} ⭐</Text>
+
+            {isMine && (
+              <Pressable
+                onPress={confirmDelete}
+                disabled={isDeleting}
+                style={styles.deleteButton}
+                accessibilityLabel="Delete post"
+              >
+                {isDeleting ? (
+                  <ActivityIndicator color={COLORS.plum} />
+                ) : (
+                  <>
+                    <Ionicons name="trash-outline" size={18} color={COLORS.plum} />
+                    <Text style={styles.deleteText}>Delete post</Text>
+                  </>
+                )}
+              </Pressable>
+            )}
           </Pressable>
         )}
       </Pressable>
@@ -136,5 +187,17 @@ const styles = StyleSheet.create({
     marginTop: 6,
     color: COLORS.plum,
     fontWeight: "700",
+  },
+  deleteButton: {
+    marginTop: 14,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 6,
+  },
+  deleteText: {
+    color: COLORS.plum,
+    fontSize: 14,
   },
 });

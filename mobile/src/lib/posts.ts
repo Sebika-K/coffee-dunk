@@ -7,6 +7,7 @@ import { User } from "firebase/auth";
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -16,7 +17,7 @@ import {
   Timestamp,
   where,
 } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 type NewPost = {
   photoUri: string; // the photo's location on the phone (file:///...)
@@ -85,4 +86,21 @@ export async function fetchUserPosts(userId: string): Promise<Post[]> {
 export async function fetchUserBio(userId: string): Promise<string> {
   const snap = await getDoc(doc(db, "users", userId));
   return snap.exists() ? snap.data().bio ?? "" : "";
+}
+
+// Delete one of YOUR posts: the database entry first, then the photo file.
+export async function deletePost(post: Post) {
+  // 1) Remove the post from Firestore - after this, it's gone from every screen
+  await deleteDoc(doc(db, "uploads", post.id));
+
+  // 2) Remove the photo file from Storage (a download link works as a reference).
+  //    If this part fails, the post is still deleted - we just log it,
+  //    like the web app did, rather than showing the user an error.
+  if (post.image_url?.startsWith("http")) {
+    try {
+      await deleteObject(ref(storage, post.image_url));
+    } catch (error) {
+      console.log("Photo file not deleted (post was):", error);
+    }
+  }
 }

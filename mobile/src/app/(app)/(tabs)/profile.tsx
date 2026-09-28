@@ -110,7 +110,11 @@ export default function ProfileScreen() {
         <Ionicons name="add" size={30} color="white" />
       </Pressable>
 
-      <PostModal post={selectedPost} onClose={() => setSelectedPost(null)} />
+      <PostModal
+        post={selectedPost}
+        onClose={() => setSelectedPost(null)}
+        onDeleted={(deleted) => setPosts((current) => current.filter((p) => p.id !== deleted.id))}
+      />
     </ImageBackground>
   );
 }
