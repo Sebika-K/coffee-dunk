@@ -100,6 +100,15 @@ export default function CafeScreen() {
         />
       )}
 
+      {/* Floating "+" button: post at this café */}
+      <Pressable
+        style={[styles.addButton, { bottom: insets.bottom + 84 }]}
+        onPress={() => router.push({ pathname: "/upload", params: { placeId, name } })}
+        accessibilityLabel="New post at this café"
+      >
+        <Ionicons name="add" size={30} color="white" />
+      </Pressable>
+
       <PostModal post={selectedPost} onClose={() => setSelectedPost(null)} />
     </ImageBackground>
   );
@@ -160,6 +169,17 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     overflow: "hidden",
     backgroundColor: COLORS.card,
+  },
+  addButton: {
+    position: "absolute",
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.plum,
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 6px 16px rgba(0, 0, 0, 0.25)",
   },
   postImage: {
     width: "100%",

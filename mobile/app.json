@@ -32,6 +32,13 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Coffee Dunk to access your photos so you can post your coffee.",
+          "cameraPermission": "Allow Coffee Dunk to use your camera so you can snap your coffee."
+        }
       ]
     ],
     "experiments": {
