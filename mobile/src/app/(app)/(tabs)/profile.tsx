@@ -2,7 +2,6 @@
 // Rebuilt from the web app's profile.html / profile.css.
 
 import { PostGrid } from "@/components/PostGrid";
-import { PostModal } from "@/components/PostModal";
 import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
@@ -22,7 +21,6 @@ export default function ProfileScreen() {
   const [bio, setBio] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   // Reload every time the profile comes into view (e.g. after posting)
   useFocusEffect(
@@ -97,7 +95,9 @@ export default function ProfileScreen() {
     >
       <PostGrid
         posts={posts}
-        onPressPost={setSelectedPost}
+        onPressPost={(post) =>
+          router.push({ pathname: "/post/[postId]", params: { postId: post.id } })
+        }
         header={header}
         emptyText={isLoading ? "" : "No posts yet. Tap + to share your first coffee!"}
       />
@@ -110,12 +110,6 @@ export default function ProfileScreen() {
       >
         <Ionicons name="add" size={30} color="white" />
       </Pressable>
-
-      <PostModal
-        post={selectedPost}
-        onClose={() => setSelectedPost(null)}
-        onDeleted={(deleted) => setPosts((current) => current.filter((p) => p.id !== deleted.id))}
-      />
     </ImageBackground>
   );
 }

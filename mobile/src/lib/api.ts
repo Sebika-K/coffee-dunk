@@ -63,6 +63,7 @@ export type Post = {
   user: string | null;
   user_avatar: string | null;
   cafe_name: string | null;
+  place_id: string | null; // which café (lets a post link back to its café page)
   created_at: string | null; // e.g. "2025-08-12T14:03:22+00:00"
   // Journal fields (Phase 3) - null / [] on older posts
   drink: string | null; // a drink id, e.g. "latte" (see constants/drinks.ts)

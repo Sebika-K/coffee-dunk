@@ -43,6 +43,7 @@ def get_posts_by_place_id(place_id):
                 'rating': d.get('rating'),
                 'user_id': d.get('user_id'),
                 'cafe_name': d.get('cafe_name'),
+                'place_id': d.get('place_id'),
                 'user': d.get('user'), 
                 'user_avatar': d.get('user_avatar'),
                 'created_at': d.get('created_at'),

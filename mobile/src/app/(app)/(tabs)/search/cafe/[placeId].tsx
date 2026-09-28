@@ -3,7 +3,6 @@
 // the id comes from the address, e.g. /search/cafe/ChIJOzVa9gSLj4ARFQqljssXWUI
 
 import { PostGrid } from "@/components/PostGrid";
-import { PostModal } from "@/components/PostModal";
 import { COLORS } from "@/constants/theme";
 import { fetchCafePosts, Post } from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,7 +26,6 @@ export default function CafeScreen() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null); // the post in the popup
 
   // Load the posts whenever this screen comes into view - when it first opens,
   // AND when you come back to it (e.g. after posting, so your new post shows up)
@@ -77,7 +75,9 @@ export default function CafeScreen() {
       ) : (
         <PostGrid
           posts={posts}
-          onPressPost={setSelectedPost}
+          onPressPost={(post) =>
+          router.push({ pathname: "/post/[postId]", params: { postId: post.id } })
+        }
           emptyText="No posts here yet. Be the first!"
         />
       )}
@@ -90,12 +90,6 @@ export default function CafeScreen() {
       >
         <Ionicons name="add" size={30} color="white" />
       </Pressable>
-
-      <PostModal
-        post={selectedPost}
-        onClose={() => setSelectedPost(null)}
-        onDeleted={(deleted) => setPosts((current) => current.filter((p) => p.id !== deleted.id))}
-      />
     </ImageBackground>
   );
 }

@@ -10,6 +10,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  DocumentSnapshot,
   getDoc,
   getDocs,
   orderBy,
@@ -90,26 +91,36 @@ export async function fetchUserPosts(userId: string): Promise<Post[]> {
   );
   const snapshot = await getDocs(q);
 
-  // Turn each Firestore document into the same Post shape the backend sends
-  return snapshot.docs.map((docSnap) => {
-    const d = docSnap.data();
-    return {
-      id: docSnap.id,
-      image_url: d.image_url ?? null,
-      caption: d.caption ?? null,
-      rating: d.rating ?? null,
-      user_id: d.user_id ?? null,
-      user: d.user ?? null,
-      user_avatar: d.user_avatar ?? null,
-      cafe_name: d.cafe_name ?? null,
-      created_at: d.created_at instanceof Timestamp ? d.created_at.toDate().toISOString() : null,
-      drink: d.drink ?? null,
-      drink_custom: d.drink_custom ?? null,
-      milk: d.milk ?? null,
-      temperature: d.temperature ?? null,
-      notes: Array.isArray(d.notes) ? d.notes : [],
-    };
-  });
+  return snapshot.docs.map(docToPost);
+}
+
+// ONE post by its id (for the post page), or null if it doesn't exist (e.g. deleted)
+export async function fetchPost(postId: string): Promise<Post | null> {
+  const snap = await getDoc(doc(db, "uploads", postId));
+  return snap.exists() ? docToPost(snap) : null;
+}
+
+// Turn a Firestore document into the same Post shape the backend sends.
+// Shared by fetchUserPosts and fetchPost, so both always match.
+function docToPost(docSnap: DocumentSnapshot): Post {
+  const d = docSnap.data() ?? {};
+  return {
+    id: docSnap.id,
+    image_url: d.image_url ?? null,
+    caption: d.caption ?? null,
+    rating: d.rating ?? null,
+    user_id: d.user_id ?? null,
+    user: d.user ?? null,
+    user_avatar: d.user_avatar ?? null,
+    cafe_name: d.cafe_name ?? null,
+    place_id: d.place_id ?? null,
+    created_at: d.created_at instanceof Timestamp ? d.created_at.toDate().toISOString() : null,
+    drink: d.drink ?? null,
+    drink_custom: d.drink_custom ?? null,
+    milk: d.milk ?? null,
+    temperature: d.temperature ?? null,
+    notes: Array.isArray(d.notes) ? d.notes : [],
+  };
 }
 
 // A user's bio, saved in the "users" collection (empty if they haven't written one)
