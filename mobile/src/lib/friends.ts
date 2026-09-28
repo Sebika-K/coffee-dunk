@@ -121,8 +121,8 @@ export type MyFriends = {
   sent: PublicProfile[]; // requests I sent that they haven't answered
 };
 
-// Everyone I'm connected to, sorted into friends / incoming / sent
-export async function fetchMyFriends(myId: string): Promise<MyFriends> {
+// Just the ids of everyone I'm connected to (no names/photos - quick)
+async function fetchConnectionIds(myId: string) {
   // "array-contains": every friendship where I'm one of the two members
   const snapshot = await getDocs(
     query(collection(db, "friendships"), where("members", "array-contains", myId))
@@ -141,6 +141,17 @@ export async function fetchMyFriends(myId: string): Promise<MyFriends> {
     else if (f.requested_by === myId) sentIds.push(otherId);
     else incomingIds.push(otherId);
   }
+  return { friendIds, incomingIds, sentIds };
+}
+
+// The ids of my (accepted) friends - used by the feed
+export async function fetchFriendIds(myId: string): Promise<string[]> {
+  return (await fetchConnectionIds(myId)).friendIds;
+}
+
+// Everyone I'm connected to, sorted into friends / incoming / sent
+export async function fetchMyFriends(myId: string): Promise<MyFriends> {
+  const { friendIds, incomingIds, sentIds } = await fetchConnectionIds(myId);
 
   // Load everyone's name + photo at the same time
   const [friends, incoming, sent] = await Promise.all([

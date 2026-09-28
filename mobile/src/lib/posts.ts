@@ -13,6 +13,7 @@ import {
   DocumentSnapshot,
   getDoc,
   getDocs,
+  limit,
   orderBy,
   query,
   serverTimestamp,
@@ -102,7 +103,7 @@ export async function fetchPost(postId: string): Promise<Post | null> {
 
 // Turn a Firestore document into the same Post shape the backend sends.
 // Shared by fetchUserPosts and fetchPost, so both always match.
-function docToPost(docSnap: DocumentSnapshot): Post {
+export function docToPost(docSnap: DocumentSnapshot): Post {
   const d = docSnap.data() ?? {};
   return {
     id: docSnap.id,
@@ -121,6 +122,41 @@ function docToPost(docSnap: DocumentSnapshot): Post {
     temperature: d.temperature ?? null,
     notes: Array.isArray(d.notes) ? d.notes : [],
   };
+}
+
+// The friends feed: newest posts from me + my friends.
+//
+// "Fan-out on read": we build the feed when it's opened, by asking for posts
+// whose author is in my list. Firestore's "in" allows up to 30 values per query,
+// so bigger lists are split into groups of 30 and the results merged.
+const MAX_IN = 30;
+
+export async function fetchFeed(authorIds: string[], maxPosts = 30): Promise<Post[]> {
+  // Split the authors into groups of 30
+  const groups: string[][] = [];
+  for (let i = 0; i < authorIds.length; i += MAX_IN) {
+    groups.push(authorIds.slice(i, i + MAX_IN));
+  }
+
+  // One query per group, all at the same time
+  const snapshots = await Promise.all(
+    groups.map((group) =>
+      getDocs(
+        query(
+          collection(db, "uploads"),
+          where("user_id", "in", group),
+          orderBy("created_at", "desc"),
+          limit(maxPosts)
+        )
+      )
+    )
+  );
+
+  // Merge, newest first, keep the first `maxPosts`
+  return snapshots
+    .flatMap((snap) => snap.docs.map(docToPost))
+    .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))
+    .slice(0, maxPosts);
 }
 
 // A user's bio, saved in the "users" collection (empty if they haven't written one)

@@ -1,9 +1,10 @@
-// The floating bottom navigation pill (🏠 + your avatar),
+// The floating bottom navigation pill (☕ feed, 🔍 search, your avatar),
 // rebuilt from the web app's nav-pill.css / nav-pill.js.
 
 import { COLORS, PILL } from "@/constants/theme";
 import { useKeyboardOpen } from "@/hooks/useKeyboardOpen";
 import { useAuth } from "@/lib/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,13 +24,18 @@ export function NavPill() {
 
   return (
     <View style={[styles.pill, { bottom: insets.bottom + 12 }]}>
-      <Pressable
+      <PillIcon
+        icon="cafe"
+        label="Feed"
+        isActive={pathname === "/feed" || pathname === "/"}
+        onPress={() => router.navigate("/feed")}
+      />
+      <PillIcon
+        icon="search"
+        label="Search"
+        isActive={pathname.startsWith("/search")}
         onPress={() => router.navigate("/search")}
-        style={[styles.homeButton, pathname.startsWith("/search") && styles.active]}
-        accessibilityLabel="Home"
-      >
-        <Text style={styles.homeIcon}>🏠</Text>
-      </Pressable>
+      />
 
       <Pressable
         onPress={() => router.navigate("/profile")}
@@ -39,6 +45,29 @@ export function NavPill() {
         <Image source={avatar} style={styles.avatarImage} />
       </Pressable>
     </View>
+  );
+}
+
+// One icon button in the pill (filled icon when active, outline when not)
+function PillIcon({
+  icon,
+  label,
+  isActive,
+  onPress,
+}: {
+  icon: "cafe" | "search";
+  label: string;
+  isActive: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.homeButton, isActive && styles.active]}
+      accessibilityLabel={label}
+    >
+      <Ionicons name={isActive ? icon : `${icon}-outline`} size={24} color={COLORS.plum} />
+    </Pressable>
   );
 }
 
