@@ -2,6 +2,7 @@
 // The [placeId] in the file name means this screen works for ANY café -
 // the id comes from the address, e.g. /search/cafe/ChIJOzVa9gSLj4ARFQqljssXWUI
 
+import { PostModal } from "@/components/PostModal";
 import { COLORS } from "@/constants/theme";
 import { fetchCafePosts, Post } from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,6 +28,7 @@ export default function CafeScreen() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null); // the post in the popup
 
   // Load the posts when the screen opens (and again if the café changes)
   useEffect(() => {
@@ -81,7 +83,7 @@ export default function CafeScreen() {
           renderItem={({ item }) => (
             <Pressable
               style={styles.postCard}
-              onPress={() => console.log("Tapped post:", item.id)} // popup comes in step 2.6b
+              onPress={() => setSelectedPost(item)} // open the popup with this post
             >
               <Image
                 source={
@@ -97,6 +99,8 @@ export default function CafeScreen() {
           )}
         />
       )}
+
+      <PostModal post={selectedPost} onClose={() => setSelectedPost(null)} />
     </ImageBackground>
   );
 }
