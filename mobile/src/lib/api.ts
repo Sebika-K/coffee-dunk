@@ -46,3 +46,9 @@ export async function fetchNearbyCafes(city: string): Promise<Cafe[]> {
   }
   return data.cafes;
 }
+
+// Build the address of a café photo. It goes through OUR backend's
+// /api/photo route (step 1.2b), so the Google key never reaches the phone.
+export function cafePhotoUrl(photoRef: string, width = 400): string {
+  return `${API_URL}/api/photo?ref=${encodeURIComponent(photoRef)}&w=${width}`;
+}

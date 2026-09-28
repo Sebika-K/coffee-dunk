@@ -9,6 +9,7 @@ export const COLORS = {
   linkPurple: "#551A8B", // links on the landing screen
   error: "#FFD6D6", // error messages on plum cards
   cream: "rgba(255, 255, 255, 0.85)", // floating pills (nav pill, search bar)
+  card: "#fdf3e7", // café cards (from result.css)
 };
 
 // Shared look for floating pills, so the nav pill and search bar match

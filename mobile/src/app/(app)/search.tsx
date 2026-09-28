@@ -1,4 +1,5 @@
 import { COLORS } from "@/constants/theme";
+import { CafeCard } from "@/components/CafeCard";
 import { SearchBar } from "@/components/SearchBar";
 import { useKeyboardOpen } from "@/hooks/useKeyboardOpen";
 import { Cafe, fetchNearbyCafes } from "@/lib/api";
@@ -43,7 +44,13 @@ export default function SearchScreen() {
 
   return (
     <ImageBackground
-      source={require("@/assets/images/search_screen.png")}
+      // Illustration before searching; the plain background (like the web
+      // results page) once there are cards to look at
+      source={
+        hasSearched
+          ? require("@/assets/images/background_screen.png")
+          : require("@/assets/images/search_screen.png")
+      }
       style={styles.background}
       resizeMode="cover"
     >
@@ -65,13 +72,16 @@ export default function SearchScreen() {
         <FlatList
           data={cafes}
           keyExtractor={(cafe) => cafe.place_id}
+          numColumns={2} // a two-column grid, like the web gallery
+          columnWrapperStyle={styles.gridRow}
           contentContainerStyle={styles.list}
+          keyboardDismissMode="on-drag" // scrolling puts the keyboard away
           ListEmptyComponent={<Text style={styles.emptyText}>No cafés found. Try another city.</Text>}
           renderItem={({ item }) => (
-            <View style={styles.row}>
-              <Text style={styles.cafeName}>{item.name}</Text>
-              <Text style={styles.rating}>{item.rating ?? "–"} ⭐</Text>
-            </View>
+            <CafeCard
+              cafe={item}
+              onPress={() => console.log("Tapped café:", item.name)} // café page comes in step 2.6
+            />
           )}
         />
       )}
@@ -113,23 +123,10 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: 16,
     paddingBottom: 120, // leave room so the nav pill doesn't cover the last café
-    gap: 8,
+    gap: 16, // space between rows
   },
-  row: {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    padding: 14,
-    borderRadius: 10,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  cafeName: {
-    flex: 1,
-    color: COLORS.plum,
-    fontSize: 16,
-  },
-  rating: {
-    color: COLORS.plum,
+  gridRow: {
+    gap: 16, // space between the two cards in a row
   },
   emptyText: {
     textAlign: "center",
