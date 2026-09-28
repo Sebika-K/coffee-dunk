@@ -52,3 +52,34 @@ export async function fetchNearbyCafes(city: string): Promise<Cafe[]> {
 export function cafePhotoUrl(photoRef: string, width = 400): string {
   return `${API_URL}/api/photo?ref=${encodeURIComponent(photoRef)}&w=${width}`;
 }
+
+// The shape of one post, exactly as /api/cafes/<place_id>/posts sends it (step 1.3)
+export type Post = {
+  id: string;
+  image_url: string | null;
+  caption: string | null;
+  rating: number | null;
+  user_id: string | null;
+  user: string | null;
+  user_avatar: string | null;
+  cafe_name: string | null;
+  created_at: string | null; // e.g. "2025-08-12T14:03:22+00:00"
+};
+
+// Ask the backend for all posts at one café (newest first)
+export async function fetchCafePosts(placeId: string): Promise<Post[]> {
+  const url = `${API_URL}/api/cafes/${encodeURIComponent(placeId)}/posts`;
+
+  let response: Response;
+  try {
+    response = await fetch(url);
+  } catch {
+    throw new Error("Can't reach the Coffee Dunk server. Is the backend running?");
+  }
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || `Server error (${response.status})`);
+  }
+  return data.posts;
+}

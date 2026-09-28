@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function NavPill() {
   const { user } = useAuth();
-  const pathname = usePathname(); // which screen we're on, e.g. "/search"
+  const pathname = usePathname(); // which screen we're on, e.g. "/search" or "/search/cafe/ChIJ…"
   const insets = useSafeAreaInsets(); // space taken by the iPhone home bar, notch, etc.
   const keyboardOpen = useKeyboardOpen();
 
@@ -25,7 +25,7 @@ export function NavPill() {
     <View style={[styles.pill, { bottom: insets.bottom + 12 }]}>
       <Pressable
         onPress={() => router.navigate("/search")}
-        style={[styles.homeButton, pathname === "/search" && styles.active]}
+        style={[styles.homeButton, pathname.startsWith("/search") && styles.active]}
         accessibilityLabel="Home"
       >
         <Text style={styles.homeIcon}>🏠</Text>

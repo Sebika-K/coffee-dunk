@@ -3,6 +3,7 @@ import { CafeCard } from "@/components/CafeCard";
 import { SearchBar } from "@/components/SearchBar";
 import { useKeyboardOpen } from "@/hooks/useKeyboardOpen";
 import { Cafe, fetchNearbyCafes } from "@/lib/api";
+import { router } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -80,7 +81,13 @@ export default function SearchScreen() {
           renderItem={({ item }) => (
             <CafeCard
               cafe={item}
-              onPress={() => console.log("Tapped café:", item.name)} // café page comes in step 2.6
+              onPress={() =>
+                // Open this café's page, passing its id (in the address) and name
+                router.push({
+                  pathname: "/search/cafe/[placeId]",
+                  params: { placeId: item.place_id, name: item.name },
+                })
+              }
             />
           )}
         />

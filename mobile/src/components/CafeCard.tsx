@@ -35,6 +35,7 @@ export function CafeCard({ cafe, onPress }: Props) {
 const styles = StyleSheet.create({
   card: {
     flex: 1, // share the row equally with the card next to it
+    maxWidth: "48%", // keeps a lone last card from stretching full width
     backgroundColor: COLORS.card,
     borderRadius: 15,
     padding: 10,
