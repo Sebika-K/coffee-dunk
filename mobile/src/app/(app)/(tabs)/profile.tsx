@@ -1,14 +1,16 @@
 // Your profile: photo, name, stats, bio and all your posts.
 // Rebuilt from the web app's profile.html / profile.css.
 
+import { CafesToTry } from "@/components/CafesToTry";
 import { DiaryCard } from "@/components/DiaryCard";
 import { PostGrid } from "@/components/PostGrid";
 import { COLORS } from "@/constants/theme";
-import { Post } from "@/lib/api";
+import { fetchRecommendations, Post, Recommendations } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { fetchUserBio, fetchUserPosts } from "@/lib/posts";
 import { calculateStats, formatRating } from "@/lib/stats";
 import { Ionicons } from "@expo/vector-icons";
+import { User } from "firebase/auth";
 import { Image } from "expo-image";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
@@ -21,6 +23,7 @@ export default function ProfileScreen() {
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [bio, setBio] = useState("");
+  const [recommendations, setRecommendations] = useState<Recommendations | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -30,13 +33,23 @@ export default function ProfileScreen() {
       if (!user) return;
       let isActive = true;
 
-      async function load(userId: string) {
+      async function load(signedInUser: User) {
+        const userId = signedInUser.uid;
         try {
-          // Load posts and bio at the SAME time instead of one after the other
-          const [myPosts, myBio] = await Promise.all([fetchUserPosts(userId), fetchUserBio(userId)]);
+          // Load everything at the SAME time. Recommendations are a bonus:
+          // if the backend is off or fails, the profile still works (null = hide the card).
+          const [myPosts, myBio, myRecommendations] = await Promise.all([
+            fetchUserPosts(userId),
+            fetchUserBio(userId),
+            fetchRecommendations(signedInUser).catch((error) => {
+              console.log("Recommendations failed:", error);
+              return null;
+            }),
+          ]);
           if (isActive) {
             setPosts(myPosts);
             setBio(myBio);
+            setRecommendations(myRecommendations);
             setErrorMessage("");
           }
         } catch (error) {
@@ -47,7 +60,7 @@ export default function ProfileScreen() {
         }
       }
 
-      load(user.uid);
+      load(user);
       return () => {
         isActive = false;
       };
@@ -92,6 +105,7 @@ export default function ProfileScreen() {
 
       {bio !== "" && <Text style={styles.bio}>{bio}</Text>}
       {!isLoading && posts.length > 0 && <DiaryCard stats={stats} />}
+      {!isLoading && <CafesToTry recommendations={recommendations} />}
       {errorMessage !== "" && <Text style={styles.error}>{errorMessage}</Text>}
       {isLoading && <ActivityIndicator color={COLORS.plum} style={styles.spinner} />}
     </View>

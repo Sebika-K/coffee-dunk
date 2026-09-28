@@ -1,6 +1,7 @@
 // Everything the app needs to talk to YOUR Flask backend.
 
 import Constants from "expo-constants";
+import { User } from "firebase/auth";
 
 // Where is the backend?
 // During development it runs on your Mac. The phone can't use "127.0.0.1"
@@ -135,4 +136,31 @@ export async function fetchTopDrinks(placeId: string): Promise<TopDrink[]> {
   if (!response.ok) throw new Error(`Server error (${response.status})`);
   const data = await response.json();
   return data.top_drinks;
+}
+
+// A café recommended for you (step 6a)
+export type RecommendedCafe = {
+  place_id: string;
+  cafe_name: string | null;
+  average: number; // how others rated your favourite drink THERE
+  count: number;
+  score: number;
+};
+
+export type Recommendations = {
+  // Your favourite drink, or null if you don't have a clear favourite yet
+  favourite: { drink: string; drink_custom: string | null; milk: string | null; temperature: string | null } | null;
+  cafes: RecommendedCafe[];
+};
+
+// "You love X - try these cafés". This route is PERSONAL, so we prove who we
+// are by sending our Firebase ID token - the backend verifies it with Google.
+export async function fetchRecommendations(user: User): Promise<Recommendations> {
+  const token = await user.getIdToken(); // Firebase refreshes it automatically if it expired
+
+  const response = await fetch(`${API_URL}/api/recommendations`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error(`Server error (${response.status})`);
+  return response.json();
 }
