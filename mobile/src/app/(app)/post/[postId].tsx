@@ -2,7 +2,11 @@
 // rating, café, caption. Replaces the old popup - there's more room here,
 // and every post has its own address: /post/<postId>
 
+import { LikeButton } from "@/components/LikeButton";
+import { LikedByList } from "@/components/LikedByList";
 import { RecipeCard } from "@/components/RecipeCard";
+import { fetchLikersOfMyPost, isLikedByMe, setLiked } from "@/lib/likes";
+import { PublicProfile } from "@/lib/friends";
 import { SaveButton } from "@/components/SaveButton";
 import { StarRating } from "@/components/StarRating";
 import { brewMethodLabel, describeDrink, tastingNoteLabel } from "@/constants/drinks";
@@ -29,6 +33,8 @@ export default function PostScreen() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isLiked, setIsLiked] = useState(false); // did I like this friend's post?
+  const [likers, setLikers] = useState<PublicProfile[]>([]); // who liked MY post
 
   // Is this post in my "Want to try"?
   useEffect(() => {
@@ -74,6 +80,28 @@ export default function PostScreen() {
 
   const isMine = post !== null && user !== null && post.user_id === user.uid;
 
+  // Likes: on MY post, load who liked it; on a friend's post, load whether I liked it
+  useEffect(() => {
+    if (!user || !post) return;
+    if (post.user_id === user.uid) {
+      fetchLikersOfMyPost(post.id).then(setLikers).catch(() => {});
+    } else {
+      isLikedByMe(post.id, user.uid).then(setIsLiked).catch(() => {});
+    }
+  }, [user, post]);
+
+  async function toggleLike() {
+    if (!user || !post) return;
+    const wasLiked = isLiked;
+    setIsLiked(!wasLiked); // instant
+    try {
+      await setLiked(post.id, user.uid, !wasLiked);
+    } catch (error) {
+      console.log("Like failed:", error);
+      setIsLiked(wasLiked); // undo
+    }
+  }
+
   function confirmDelete() {
     Alert.alert("Delete this post?", "This can't be undone.", [
       { text: "Cancel", style: "cancel" },
@@ -110,11 +138,6 @@ export default function PostScreen() {
         <Pressable onPress={() => router.back()} style={styles.iconButton} accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={24} color={COLORS.plum} />
         </Pressable>
-        {post && !isMine && (
-          <View style={styles.iconButton}>
-            <SaveButton isSaved={isSaved} onToggle={toggleSave} size={24} />
-          </View>
-        )}
         {isMine && (
           <Pressable
             onPress={confirmDelete}
@@ -147,6 +170,15 @@ export default function PostScreen() {
             contentFit="cover"
             transition={200}
           />
+
+          {/* Friend's post: ❤️ on the left, 🔖 on the right, like Instagram */}
+          {!isMine && (
+            <View style={styles.actionRow}>
+              <LikeButton isLiked={isLiked} onToggle={toggleLike} size={28} />
+              <View style={styles.spacer} />
+              <SaveButton isSaved={isSaved} onToggle={toggleSave} size={26} />
+            </View>
+          )}
 
           {/* Who and when */}
           <View style={styles.userRow}>
@@ -196,6 +228,9 @@ export default function PostScreen() {
 
           {/* The full recipe for homemade coffee */}
           {post.source === "home" && post.recipe && <RecipeCard recipe={post.recipe} />}
+
+          {/* My post: who liked it (only I can see this) */}
+          {isMine && <LikedByList likers={likers} />}
         </ScrollView>
       )}
     </View>
@@ -236,6 +271,13 @@ const styles = StyleSheet.create({
     aspectRatio: 4 / 5,
     borderRadius: 16,
     backgroundColor: COLORS.sand,
+  },
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  spacer: {
+    flex: 1,
   },
   userRow: {
     flexDirection: "row",

@@ -105,7 +105,7 @@ export async function removeFriendship(myId: string, otherId: string) {
 }
 
 // One person's public profile
-async function fetchProfile(userId: string): Promise<PublicProfile> {
+export async function fetchProfile(userId: string): Promise<PublicProfile> {
   const snap = await getDoc(doc(db, "users", userId));
   const data = snap.data();
   return {

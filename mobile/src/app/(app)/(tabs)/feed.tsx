@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { fetchFriendIds } from "@/lib/friends";
 import { fetchFeed } from "@/lib/posts";
 import { fetchSavedIds, savePost, unsavePost } from "@/lib/saved";
+import { fetchLikedPostIds, setLiked } from "@/lib/likes";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
@@ -28,6 +29,7 @@ export default function FeedScreen() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [friendCount, setFriendCount] = useState(0);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set()); // posts I've saved
+  const [likedIds, setLikedIds] = useState<Set<string>>(new Set()); // posts I've liked
   const [isLoading, setIsLoading] = useState(true); // first load
   const [isRefreshing, setIsRefreshing] = useState(false); // pull-to-refresh
   const [errorMessage, setErrorMessage] = useState("");
@@ -42,7 +44,11 @@ export default function FeedScreen() {
       setFriendCount(friendIds.length);
       setSavedIds(new Set(saved));
       // My posts + my friends' posts
-      setPosts(await fetchFeed([user.uid, ...friendIds]));
+      const feedPosts = await fetchFeed([user.uid, ...friendIds]);
+      setPosts(feedPosts);
+      // Which of my FRIENDS' posts have I liked? (likes are a bonus - never break the feed)
+      const friendPostIds = feedPosts.filter((p) => p.user_id !== user.uid).map((p) => p.id);
+      setLikedIds(await fetchLikedPostIds(friendPostIds, user.uid).catch(() => new Set<string>()));
       setErrorMessage("");
     } catch (error) {
       console.log("Feed load failed:", error);
@@ -80,6 +86,27 @@ export default function FeedScreen() {
         else undo.delete(postId);
         return undo;
       });
+    }
+  }
+
+  // Like / unlike instantly, then store it (undo if storing fails)
+  async function toggleLike(postId: string) {
+    if (!user) return;
+    const wasLiked = likedIds.has(postId);
+    const setInSet = (liked: boolean) =>
+      setLikedIds((current) => {
+        const next = new Set(current); // a NEW set - never edit the old one
+        if (liked) next.add(postId);
+        else next.delete(postId);
+        return next;
+      });
+
+    setInSet(!wasLiked);
+    try {
+      await setLiked(postId, user.uid, !wasLiked);
+    } catch (error) {
+      console.log("Like failed:", error);
+      setInSet(wasLiked); // undo
     }
   }
 
@@ -131,6 +158,8 @@ export default function FeedScreen() {
             // You can't save your own posts - only friends'
             isSaved={savedIds.has(item.id)}
             onToggleSave={item.user_id === user?.uid ? undefined : () => toggleSave(item.id)}
+            isLiked={likedIds.has(item.id)}
+            onToggleLike={item.user_id === user?.uid ? undefined : () => toggleLike(item.id)}
           />
         )}
         ListHeaderComponent={header}

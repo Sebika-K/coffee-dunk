@@ -1,5 +1,6 @@
 // One post in the friends feed: photo first, then who / what / where.
 
+import { LikeButton } from "@/components/LikeButton";
 import { SaveButton } from "@/components/SaveButton";
 import { StarRating } from "@/components/StarRating";
 import { brewMethodLabel, describeDrink, tastingNoteLabel } from "@/constants/drinks";
@@ -13,12 +14,20 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type Props = {
   post: Post;
-  // Leave these out to hide the save button (e.g. on your own posts)
+  // Leave out the "on..." functions to hide the buttons (e.g. on your own posts)
   isSaved?: boolean;
   onToggleSave?: () => void;
+  isLiked?: boolean;
+  onToggleLike?: () => void;
 };
 
-export function FeedCard({ post, isSaved = false, onToggleSave }: Props) {
+export function FeedCard({
+  post,
+  isSaved = false,
+  onToggleSave,
+  isLiked = false,
+  onToggleLike,
+}: Props) {
   const drinkName = describeDrink(post);
 
   function openPost() {
@@ -42,7 +51,6 @@ export function FeedCard({ post, isSaved = false, onToggleSave }: Props) {
           {post.user ?? "Anon"}
         </Text>
         {post.created_at && <Text style={styles.time}>{formatTimeAgo(post.created_at)}</Text>}
-        {onToggleSave && <SaveButton isSaved={isSaved} onToggle={onToggleSave} />}
       </View>
 
       {/* The coffee */}
@@ -54,6 +62,15 @@ export function FeedCard({ post, isSaved = false, onToggleSave }: Props) {
         contentFit="cover"
         transition={200}
       />
+
+      {/* Actions, like Instagram: ❤️ on the left, 🔖 on the right */}
+      {(onToggleLike || onToggleSave) && (
+        <View style={styles.actionRow}>
+          {onToggleLike && <LikeButton isLiked={isLiked} onToggle={onToggleLike} />}
+          <View style={styles.spacer} />
+          {onToggleSave && <SaveButton isSaved={isSaved} onToggle={onToggleSave} size={24} />}
+        </View>
+      )}
 
       {/* What + how good */}
       <View style={styles.drinkRow}>
@@ -100,6 +117,7 @@ export function FeedCard({ post, isSaved = false, onToggleSave }: Props) {
           {post.caption}
         </Text>
       ) : null}
+
     </Pressable>
   );
 }
@@ -140,6 +158,15 @@ const styles = StyleSheet.create({
     aspectRatio: 4 / 5,
     borderRadius: 14,
     backgroundColor: COLORS.sand,
+  },
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: -2,
+    marginBottom: -4,
+  },
+  spacer: {
+    flex: 1,
   },
   drinkRow: {
     flexDirection: "row",
