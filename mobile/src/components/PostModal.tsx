@@ -2,6 +2,7 @@
 // with who posted it, their caption and rating.
 // Rebuilt from the web app's modal in cafe-detail.js / cafe-detail.css.
 
+import { describeDrink, tastingNoteLabel } from "@/constants/drinks";
 import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
@@ -79,6 +80,18 @@ export function PostModal({ post, onClose, onDeleted }: Props) {
               <Text style={styles.username}>{post.user ?? "Anon"}</Text>
               {post.created_at && <Text style={styles.date}>{formatDate(post.created_at)}</Text>}
             </View>
+
+            {/* Journal details - only on posts made after Phase 3 */}
+            {describeDrink(post) && <Text style={styles.drink}>☕ {describeDrink(post)}</Text>}
+            {post.notes.length > 0 && (
+              <View style={styles.notesRow}>
+                {post.notes.map((note) => (
+                  <Text key={note} style={styles.note}>
+                    {tastingNoteLabel(note)}
+                  </Text>
+                ))}
+              </View>
+            )}
 
             {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
             <Text style={styles.rating}>Rating: {post.rating ?? "–"} ⭐</Text>
@@ -177,6 +190,27 @@ const styles = StyleSheet.create({
   date: {
     color: COLORS.placeholder,
     fontSize: 12,
+  },
+  drink: {
+    marginTop: 10,
+    color: COLORS.plum,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  notesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 6,
+  },
+  note: {
+    fontSize: 12,
+    color: COLORS.plum,
+    backgroundColor: COLORS.sand,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    overflow: "hidden",
   },
   caption: {
     marginTop: 8,

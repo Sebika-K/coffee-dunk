@@ -1,7 +1,18 @@
 // New post screen: photo, café, caption and rating -> posted to Firebase.
 
 import { CafePicker, ChosenCafe } from "@/components/CafePicker";
+import { ChoiceChips, MultiChoiceChips } from "@/components/Chips";
 import { StarRating } from "@/components/StarRating";
+import {
+  DRINKS,
+  DrinkId,
+  MILKS,
+  MilkId,
+  TASTING_NOTES,
+  TastingNoteId,
+  TEMPERATURES,
+  TemperatureId,
+} from "@/constants/drinks";
 import { COLORS } from "@/constants/theme";
 import { useAuth } from "@/lib/AuthContext";
 import { createPost } from "@/lib/posts";
@@ -36,12 +47,22 @@ export default function UploadScreen() {
   const [rating, setRating] = useState(0); // 0 = not rated yet
   const [isPosting, setIsPosting] = useState(false);
 
-  // Everything a post needs (caption is optional), and not already posting
-  const canPost = photoUri !== null && cafe !== null && rating > 0 && !isPosting;
+  // Journal fields (Phase 3)
+  const [drink, setDrink] = useState<DrinkId | null>(null);
+  const [drinkCustom, setDrinkCustom] = useState(""); // typed name for "Other"
+  const [milk, setMilk] = useState<MilkId | null>(null);
+  const [temperature, setTemperature] = useState<TemperatureId | null>(null);
+  const [notes, setNotes] = useState<TastingNoteId[]>([]);
+
+  // A drink is required - and if it's "Other", it needs a typed name
+  const hasDrink = drink !== null && (drink !== "other" || drinkCustom.trim() !== "");
+
+  // Everything a post needs (caption, milk, hot/iced and notes are optional)
+  const canPost = photoUri !== null && cafe !== null && hasDrink && rating > 0 && !isPosting;
 
   async function handlePost() {
     // These checks also tell TypeScript the values can't be null below
-    if (!photoUri || !cafe || !user) return;
+    if (!photoUri || !cafe || !user || !drink) return;
 
     setIsPosting(true);
     try {
@@ -52,6 +73,11 @@ export default function UploadScreen() {
         caption: caption.trim(),
         rating,
         user,
+        drink,
+        drinkCustom: drinkCustom.trim(),
+        milk,
+        temperature,
+        notes,
       });
       router.back(); // close the upload screen - the café page reloads and shows the new post
     } catch (error) {
@@ -141,8 +167,30 @@ export default function UploadScreen() {
         <Text style={styles.label}>Café</Text>
         <CafePicker selected={cafe} onSelect={setCafe} onClear={() => setCafe(null)} />
 
+        <Text style={styles.label}>What did you drink?</Text>
+        <ChoiceChips options={DRINKS} selected={drink} onChange={setDrink} />
+        {drink === "other" && (
+          <TextInput
+            style={styles.otherInput}
+            placeholder="e.g. Lavender honey latte"
+            placeholderTextColor={COLORS.placeholder}
+            value={drinkCustom}
+            onChangeText={setDrinkCustom}
+            maxLength={40}
+          />
+        )}
+
+        <Text style={styles.label}>Milk (optional)</Text>
+        <ChoiceChips options={MILKS} selected={milk} onChange={setMilk} />
+
+        <Text style={styles.label}>Hot or iced? (optional)</Text>
+        <ChoiceChips options={TEMPERATURES} selected={temperature} onChange={setTemperature} />
+
         <Text style={styles.label}>Your rating</Text>
         <StarRating value={rating} onChange={setRating} />
+
+        <Text style={styles.label}>Tasting notes (optional)</Text>
+        <MultiChoiceChips options={TASTING_NOTES} selected={notes} onChange={setNotes} />
 
         <Text style={styles.label}>Caption</Text>
         <TextInput
@@ -208,6 +256,16 @@ const styles = StyleSheet.create({
     marginBottom: -6,
     fontSize: 14,
     fontWeight: "700",
+    color: COLORS.plum,
+  },
+  otherInput: {
+    height: 46,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "rgba(125, 46, 77, 0.2)",
+    fontSize: 15,
     color: COLORS.plum,
   },
   captionInput: {

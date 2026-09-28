@@ -2,6 +2,7 @@
 // Same data shape as the web app's upload.js, so old and new posts match.
 
 import { db, storage } from "@/lib/firebase";
+import { DrinkId, MilkId, TastingNoteId, TemperatureId } from "@/constants/drinks";
 import { Post } from "@/lib/api";
 import { User } from "firebase/auth";
 import {
@@ -26,9 +27,27 @@ type NewPost = {
   caption: string;
   rating: number;
   user: User;
+  // Journal fields (Phase 3)
+  drink: DrinkId;
+  drinkCustom: string; // only used when drink is "other"
+  milk: MilkId | null;
+  temperature: TemperatureId | null;
+  notes: TastingNoteId[];
 };
 
-export async function createPost({ photoUri, placeId, cafeName, caption, rating, user }: NewPost) {
+export async function createPost({
+  photoUri,
+  placeId,
+  cafeName,
+  caption,
+  rating,
+  user,
+  drink,
+  drinkCustom,
+  milk,
+  temperature,
+  notes,
+}: NewPost) {
   // 1) Read the photo from the phone as a "blob" (raw file data)
   const photoResponse = await fetch(photoUri);
   const photoBlob = await photoResponse.blob();
@@ -51,6 +70,12 @@ export async function createPost({ photoUri, placeId, cafeName, caption, rating,
     user: user.displayName || user.email?.split("@")[0] || "anon",
     user_avatar: user.photoURL ?? null, // null, NOT a website path (see step 2.6b)
     created_at: serverTimestamp(), // Firebase fills in the exact time
+    // Journal fields: saved as ids (e.g. "latte"), never display text
+    drink: drink,
+    drink_custom: drink === "other" ? drinkCustom : null,
+    milk: milk,
+    temperature: temperature,
+    notes: notes,
   });
 }
 
