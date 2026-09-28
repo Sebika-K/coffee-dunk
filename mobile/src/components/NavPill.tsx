@@ -1,11 +1,11 @@
 // The floating bottom navigation pill (🏠 + your avatar),
 // rebuilt from the web app's nav-pill.css / nav-pill.js.
 
-import { COLORS } from "@/constants/theme";
+import { COLORS, PILL } from "@/constants/theme";
+import { useKeyboardOpen } from "@/hooks/useKeyboardOpen";
 import { useAuth } from "@/lib/AuthContext";
 import { router, usePathname } from "expo-router";
-import { useEffect, useState } from "react";
-import { Image, Keyboard, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function NavPill() {
@@ -42,39 +42,18 @@ export function NavPill() {
   );
 }
 
-// A small custom "hook": returns true while the keyboard is on screen
-function useKeyboardOpen() {
-  const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    // iPhone can tell us just BEFORE the keyboard moves; Android only after
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const showListener = Keyboard.addListener(showEvent, () => setIsOpen(true));
-    const hideListener = Keyboard.addListener(hideEvent, () => setIsOpen(false));
-
-    return () => {
-      showListener.remove();
-      hideListener.remove();
-    };
-  }, []);
-
-  return isOpen;
-}
-
 const styles = StyleSheet.create({
   pill: {
     position: "absolute",
     alignSelf: "center", // centred horizontally
-    height: 56,
+    height: PILL.height,
     paddingHorizontal: 8,
     flexDirection: "row",
     alignItems: "center",
     gap: 16,
     borderRadius: 999, // fully rounded ends
-    backgroundColor: "rgba(255, 255, 255, 0.85)",
-    boxShadow: "0 6px 20px rgba(0, 0, 0, 0.15)",
+    backgroundColor: COLORS.cream,
+    boxShadow: PILL.shadow,
   },
   homeButton: {
     width: 44,

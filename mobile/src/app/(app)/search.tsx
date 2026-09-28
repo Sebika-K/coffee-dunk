@@ -1,4 +1,6 @@
 import { COLORS } from "@/constants/theme";
+import { SearchBar } from "@/components/SearchBar";
+import { useKeyboardOpen } from "@/hooks/useKeyboardOpen";
 import { Cafe, fetchNearbyCafes } from "@/lib/api";
 import { useState } from "react";
 import {
@@ -6,16 +8,15 @@ import {
   FlatList,
   ImageBackground,
   Keyboard,
-  Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
+  const keyboardOpen = useKeyboardOpen();
 
   const [city, setCity] = useState("");
   const [cafes, setCafes] = useState<Cafe[] | null>(null); // null = haven't searched yet
@@ -40,39 +41,22 @@ export default function SearchScreen() {
 
   const hasSearched = cafes !== null;
 
-  const searchBar = (
-    <View style={styles.searchBar}>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter the city name"
-        placeholderTextColor={COLORS.placeholder}
-        value={city}
-        onChangeText={setCity}
-        returnKeyType="search" // keyboard's Enter key says "Search"
-        onSubmitEditing={handleSearch} // ...and pressing it searches
-        autoCorrect={false}
-      />
-      <Pressable style={styles.button} onPress={handleSearch}>
-        <Text style={styles.buttonText}>Search</Text>
-      </Pressable>
-    </View>
-  );
-
   return (
     <ImageBackground
       source={require("@/assets/images/search_screen.png")}
       style={styles.background}
       resizeMode="cover"
     >
-      {/* Before searching: bar sits in the middle, like the web page.
+      {/* Before searching: bar sits below the illustration.
           After searching: bar moves to the top, results below. */}
       <View
-        style={[
-          hasSearched ? styles.topArea : styles.centerArea,
-          { paddingTop: insets.top + 12 },
-        ]}
+        style={
+          hasSearched
+            ? [styles.topArea, { paddingTop: insets.top + 12 }]
+            : [styles.belowArt, keyboardOpen && styles.aboveKeyboard]
+        }
       >
-        {searchBar}
+        <SearchBar value={city} onChangeText={setCity} onSubmit={handleSearch} />
         {isLoading && <ActivityIndicator color={COLORS.plum} style={styles.spinner} />}
         {errorMessage !== "" && <Text style={styles.errorText}>{errorMessage}</Text>}
       </View>
@@ -99,47 +83,21 @@ const styles = StyleSheet.create({
   background: {
     flex: 1,
   },
-  centerArea: {
-    flex: 1,
-    justifyContent: "center",
+  belowArt: {
+    position: "absolute",
+    top: "67%", // just under the girl's feet in the illustration
+    left: 0,
+    right: 0,
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
+  },
+  aboveKeyboard: {
+    top: "38%", // slide up while typing so the keyboard doesn't cover it
   },
   topArea: {
     alignItems: "center",
     paddingHorizontal: 16,
     paddingBottom: 8,
-  },
-  searchBar: {
-    backgroundColor: COLORS.plum,
-    width: "100%",
-    maxWidth: 380,
-    height: 66,
-    borderRadius: 33,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  input: {
-    flex: 1, // take all the space the button doesn't
-    height: 38,
-    borderRadius: 5,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    backgroundColor: COLORS.sand,
-    color: COLORS.plum,
-  },
-  button: {
-    height: 38,
-    paddingHorizontal: 16,
-    borderRadius: 5,
-    backgroundColor: COLORS.sand,
-    justifyContent: "center",
-  },
-  buttonText: {
-    color: COLORS.plum,
-    fontSize: 15,
   },
   spinner: {
     marginTop: 12,
