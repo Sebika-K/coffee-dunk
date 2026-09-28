@@ -45,7 +45,13 @@ def get_posts_by_place_id(place_id):
                 'cafe_name': d.get('cafe_name'),
                 'user': d.get('user'), 
                 'user_avatar': d.get('user_avatar'),
-                'created_at': d.get('created_at')
+                'created_at': d.get('created_at'),
+                # Journal fields (Phase 3). Old posts don't have them -> None / []
+                'drink': d.get('drink'),
+                'drink_custom': d.get('drink_custom'),
+                'milk': d.get('milk'),
+                'temperature': d.get('temperature'),
+                'notes': d.get('notes') or []
             }) 
         print(f"🔎 get_posts_by_place_id({place_id}) → {len(items)} rows")
         return items

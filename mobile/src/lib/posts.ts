@@ -78,6 +78,11 @@ export async function fetchUserPosts(userId: string): Promise<Post[]> {
       user_avatar: d.user_avatar ?? null,
       cafe_name: d.cafe_name ?? null,
       created_at: d.created_at instanceof Timestamp ? d.created_at.toDate().toISOString() : null,
+      drink: d.drink ?? null,
+      drink_custom: d.drink_custom ?? null,
+      milk: d.milk ?? null,
+      temperature: d.temperature ?? null,
+      notes: Array.isArray(d.notes) ? d.notes : [],
     };
   });
 }

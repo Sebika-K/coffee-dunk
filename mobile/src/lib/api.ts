@@ -64,6 +64,12 @@ export type Post = {
   user_avatar: string | null;
   cafe_name: string | null;
   created_at: string | null; // e.g. "2025-08-12T14:03:22+00:00"
+  // Journal fields (Phase 3) - null / [] on older posts
+  drink: string | null; // a drink id, e.g. "latte" (see constants/drinks.ts)
+  drink_custom: string | null; // the typed name when drink is "other"
+  milk: string | null; // e.g. "oat"
+  temperature: string | null; // "hot" or "iced"
+  notes: string[]; // tasting note ids, e.g. ["nutty", "smooth"]
 };
 
 // Ask the backend for all posts at one café (newest first)
