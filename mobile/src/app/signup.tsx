@@ -1,5 +1,6 @@
 import { COLORS } from "@/constants/theme";
 import { friendlyError } from "@/lib/authErrors";
+import { useAuth } from "@/lib/AuthContext";
 import { auth } from "@/lib/firebase";
 import { FirebaseError } from "firebase/app";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
@@ -19,6 +20,7 @@ import {
 const MIN_PASSWORD_LENGTH = 6; // Firebase's minimum
 
 export default function SignupScreen() {
+  const { refreshUser } = useAuth();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -46,6 +48,7 @@ export default function SignupScreen() {
       // 2) Save the username as the account's display name,
       //    just like the web app's auth.js did
       await updateProfile(result.user, { displayName: username.trim() });
+      refreshUser(); // show the username right away (not the email)
       // The app moves into the logged-in screens automatically (see _layout.tsx)
     } catch (error) {
       console.log("Signup failed:", error instanceof FirebaseError ? error.code : error);

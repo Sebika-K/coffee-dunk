@@ -9,7 +9,7 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function NavPill() {
-  const { user } = useAuth();
+  const { photoURL } = useAuth();
   const pathname = usePathname(); // which screen we're on, e.g. "/search" or "/search/cafe/ChIJ…"
   const insets = useSafeAreaInsets(); // space taken by the iPhone home bar, notch, etc.
   const keyboardOpen = useKeyboardOpen();
@@ -17,8 +17,8 @@ export function NavPill() {
   // Like the web version: hide the pill while typing
   if (keyboardOpen) return null;
 
-  const avatar = user?.photoURL
-    ? { uri: user.photoURL }
+  const avatar = photoURL
+    ? { uri: photoURL }
     : require("@/assets/images/default-avatar.jpg");
 
   return (

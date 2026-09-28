@@ -6,10 +6,8 @@ import { PostModal } from "@/components/PostModal";
 import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
-import { auth } from "@/lib/firebase";
 import { fetchUserBio, fetchUserPosts } from "@/lib/posts";
 import { Ionicons } from "@expo/vector-icons";
-import { signOut } from "firebase/auth";
 import { Image } from "expo-image";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
@@ -17,7 +15,7 @@ import { ActivityIndicator, ImageBackground, Pressable, StyleSheet, Text, View }
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
-  const { user } = useAuth();
+  const { user, displayName, photoURL } = useAuth();
   const insets = useSafeAreaInsets();
 
   const [posts, setPosts] = useState<Post[]>([]);
@@ -56,9 +54,9 @@ export default function ProfileScreen() {
     }, [user])
   );
 
-  const name = user?.displayName || user?.email?.split("@")[0] || "You";
-  const avatar = user?.photoURL
-    ? { uri: user.photoURL }
+  const name = displayName || user?.email?.split("@")[0] || "You";
+  const avatar = photoURL
+    ? { uri: photoURL }
     : require("@/assets/images/default-avatar.jpg");
 
   // Everything above the grid - scrolls together with the posts
@@ -68,9 +66,12 @@ export default function ProfileScreen() {
         <Text style={styles.username} numberOfLines={1}>
           {name}
         </Text>
-        {/* Temporary: settings (with log out) replace this in step 2.8c */}
-        <Pressable style={styles.menuButton} onPress={() => signOut(auth)} accessibilityLabel="Log out">
-          <Ionicons name="log-out-outline" size={22} color={COLORS.plum} />
+        <Pressable
+          style={styles.menuButton}
+          onPress={() => router.push("/settings")}
+          accessibilityLabel="Settings"
+        >
+          <Ionicons name="menu" size={22} color={COLORS.plum} />
         </Pressable>
       </View>
 
