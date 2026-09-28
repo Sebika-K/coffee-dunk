@@ -1,9 +1,11 @@
 // Sets up Firebase ONCE for the whole app.
-// Every screen imports `auth` (and later `db`, `storage`) from this file.
+// Every screen imports `auth`, `db` and `storage` from this file.
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth, getReactNativePersistence, initializeAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 // Values come from mobile/.env.local (not committed to git)
 const firebaseConfig = {
@@ -25,3 +27,7 @@ const app = isFirstRun ? initializeApp(firebaseConfig) : getApp();
 export const auth = isFirstRun
   ? initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) })
   : getAuth(app);
+
+// The database (posts, user profiles) and file storage (photos)
+export const db = getFirestore(app);
+export const storage = getStorage(app);

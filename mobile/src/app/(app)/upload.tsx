@@ -1,15 +1,16 @@
-// New post screen: photo, café, caption and rating.
-// (Actually posting to Firebase comes in step 2.7c.)
+// New post screen: photo, café, caption and rating -> posted to Firebase.
 
 import { CafePicker, ChosenCafe } from "@/components/CafePicker";
 import { StarRating } from "@/components/StarRating";
 import { COLORS } from "@/constants/theme";
+import { useAuth } from "@/lib/AuthContext";
+import { createPost } from "@/lib/posts";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Settings shared by the camera and the gallery
@@ -24,6 +25,7 @@ export default function UploadScreen() {
   // When opened from a café page, we already know which café
   const { placeId, name } = useLocalSearchParams<{ placeId?: string; name?: string }>();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
 
   const [photoUri, setPhotoUri] = useState<string | null>(null); // the chosen photo on the phone
   const [cafe, setCafe] = useState<ChosenCafe | null>(
@@ -32,14 +34,31 @@ export default function UploadScreen() {
   );
   const [caption, setCaption] = useState("");
   const [rating, setRating] = useState(0); // 0 = not rated yet
+  const [isPosting, setIsPosting] = useState(false);
 
-  // Everything a post needs (caption is optional)
-  const canPost = photoUri !== null && cafe !== null && rating > 0;
+  // Everything a post needs (caption is optional), and not already posting
+  const canPost = photoUri !== null && cafe !== null && rating > 0 && !isPosting;
 
-  function handlePost() {
-    // Step 2.7c will upload to Firebase here. For now, prove we have everything.
-    console.log("Ready to post:", { photoUri, cafe, caption: caption.trim(), rating });
-    Alert.alert("Almost there!", "Posting to Firebase comes in the next step.");
+  async function handlePost() {
+    // These checks also tell TypeScript the values can't be null below
+    if (!photoUri || !cafe || !user) return;
+
+    setIsPosting(true);
+    try {
+      await createPost({
+        photoUri,
+        placeId: cafe.placeId,
+        cafeName: cafe.name,
+        caption: caption.trim(),
+        rating,
+        user,
+      });
+      router.back(); // close the upload screen - the café page reloads and shows the new post
+    } catch (error) {
+      console.log("Post failed:", error);
+      Alert.alert("Couldn't post", "Something went wrong uploading your post. Please try again.");
+      setIsPosting(false);
+    }
   }
 
   async function takePhoto() {
@@ -73,7 +92,11 @@ export default function UploadScreen() {
           disabled={!canPost}
           style={[styles.postButton, !canPost && styles.postButtonDisabled]}
         >
-          <Text style={styles.postButtonText}>Post</Text>
+          {isPosting ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.postButtonText}>Post</Text>
+          )}
         </Pressable>
       </View>
 

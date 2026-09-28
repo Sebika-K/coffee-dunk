@@ -7,8 +7,8 @@ import { COLORS } from "@/constants/theme";
 import { fetchCafePosts, Post } from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -30,28 +30,31 @@ export default function CafeScreen() {
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedPost, setSelectedPost] = useState<Post | null>(null); // the post in the popup
 
-  // Load the posts when the screen opens (and again if the café changes)
-  useEffect(() => {
-    let isActive = true; // becomes false if you leave before the posts arrive
+  // Load the posts whenever this screen comes into view - when it first opens,
+  // AND when you come back to it (e.g. after posting, so your new post shows up)
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true; // becomes false if you leave before the posts arrive
 
-    async function load() {
-      try {
-        const result = await fetchCafePosts(placeId);
-        if (isActive) setPosts(result);
-      } catch (error) {
-        if (isActive) {
-          setErrorMessage(error instanceof Error ? error.message : "Something went wrong.");
+      async function load() {
+        try {
+          const result = await fetchCafePosts(placeId);
+          if (isActive) setPosts(result);
+        } catch (error) {
+          if (isActive) {
+            setErrorMessage(error instanceof Error ? error.message : "Something went wrong.");
+          }
+        } finally {
+          if (isActive) setIsLoading(false);
         }
-      } finally {
-        if (isActive) setIsLoading(false);
       }
-    }
 
-    load();
-    return () => {
-      isActive = false; // clean-up: ignore late answers for a screen that's gone
-    };
-  }, [placeId]);
+      load();
+      return () => {
+        isActive = false; // clean-up: ignore late answers for a screen that's gone
+      };
+    }, [placeId])
+  );
 
   return (
     <ImageBackground
