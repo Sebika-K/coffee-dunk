@@ -8,4 +8,11 @@ export const COLORS = {
   link: "#0a58ff", // links on plum cards
   linkPurple: "#551A8B", // links on the landing screen
   error: "#FFD6D6", // error messages on plum cards
+  cream: "rgba(255, 255, 255, 0.85)", // floating pills (nav pill, search bar)
+};
+
+// Shared look for floating pills, so the nav pill and search bar match
+export const PILL = {
+  height: 56,
+  shadow: "0 6px 20px rgba(0, 0, 0, 0.15)",
 };
