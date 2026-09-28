@@ -6,10 +6,11 @@ import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { fetchUserBio, fetchUserPosts } from "@/lib/posts";
+import { calculateStats, formatRating } from "@/lib/stats";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -52,6 +53,9 @@ export default function ProfileScreen() {
     }, [user])
   );
 
+  // Recalculate the stats only when the posts change (not on every redraw)
+  const stats = useMemo(() => calculateStats(posts), [posts]);
+
   const name = displayName || user?.email?.split("@")[0] || "You";
   const avatar = photoURL
     ? { uri: photoURL }
@@ -76,8 +80,12 @@ export default function ProfileScreen() {
       <View style={styles.profileRow}>
         <Image source={avatar} style={styles.avatar} contentFit="cover" />
         <View style={styles.stats}>
-          <Stat number={posts.length} label="POSTS" />
-          <Stat number={posts.length * 2} label="SCORE" />
+          <Stat value={stats.totalPosts} label="POSTS" />
+          <Stat value={stats.cafesTried} label="CAFÉS" />
+          <Stat
+            value={stats.averageRating === null ? "–" : formatRating(stats.averageRating)}
+            label="AVG ★"
+          />
         </View>
       </View>
 
@@ -115,10 +123,10 @@ export default function ProfileScreen() {
 }
 
 // One number + label, e.g. "12 POSTS"
-function Stat({ number, label }: { number: number; label: string }) {
+function Stat({ value, label }: { value: number | string; label: string }) {
   return (
     <View style={styles.stat}>
-      <Text style={styles.statNumber}>{number}</Text>
+      <Text style={styles.statNumber}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
@@ -155,7 +163,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 20,
-    gap: 32,
+    gap: 16,
   },
   avatar: {
     width: 84,
@@ -165,8 +173,9 @@ const styles = StyleSheet.create({
     borderColor: "white",
   },
   stats: {
+    flex: 1,
     flexDirection: "row",
-    gap: 32,
+    justifyContent: "space-around",
   },
   stat: {
     alignItems: "center",
