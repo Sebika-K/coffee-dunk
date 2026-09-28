@@ -2,8 +2,20 @@
 // Same data shape as the web app's upload.js, so old and new posts match.
 
 import { db, storage } from "@/lib/firebase";
+import { Post } from "@/lib/api";
 import { User } from "firebase/auth";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  orderBy,
+  query,
+  serverTimestamp,
+  Timestamp,
+  where,
+} from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 type NewPost = {
@@ -39,4 +51,38 @@ export async function createPost({ photoUri, placeId, cafeName, caption, rating,
     user_avatar: user.photoURL ?? null, // null, NOT a website path (see step 2.6b)
     created_at: serverTimestamp(), // Firebase fills in the exact time
   });
+}
+
+// All posts by ONE user, newest first (for the profile page).
+// Your own posts come straight from Firestore - the same query the web
+// app's profile.js used, so the database index it needs already exists.
+export async function fetchUserPosts(userId: string): Promise<Post[]> {
+  const q = query(
+    collection(db, "uploads"),
+    where("user_id", "==", userId),
+    orderBy("created_at", "desc")
+  );
+  const snapshot = await getDocs(q);
+
+  // Turn each Firestore document into the same Post shape the backend sends
+  return snapshot.docs.map((docSnap) => {
+    const d = docSnap.data();
+    return {
+      id: docSnap.id,
+      image_url: d.image_url ?? null,
+      caption: d.caption ?? null,
+      rating: d.rating ?? null,
+      user_id: d.user_id ?? null,
+      user: d.user ?? null,
+      user_avatar: d.user_avatar ?? null,
+      cafe_name: d.cafe_name ?? null,
+      created_at: d.created_at instanceof Timestamp ? d.created_at.toDate().toISOString() : null,
+    };
+  });
+}
+
+// A user's bio, saved in the "users" collection (empty if they haven't written one)
+export async function fetchUserBio(userId: string): Promise<string> {
+  const snap = await getDoc(doc(db, "users", userId));
+  return snap.exists() ? snap.data().bio ?? "" : "";
 }

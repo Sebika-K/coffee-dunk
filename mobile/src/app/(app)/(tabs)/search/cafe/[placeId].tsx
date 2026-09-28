@@ -2,16 +2,15 @@
 // The [placeId] in the file name means this screen works for ANY café -
 // the id comes from the address, e.g. /search/cafe/ChIJOzVa9gSLj4ARFQqljssXWUI
 
+import { PostGrid } from "@/components/PostGrid";
 import { PostModal } from "@/components/PostModal";
 import { COLORS } from "@/constants/theme";
 import { fetchCafePosts, Post } from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   ImageBackground,
   Pressable,
   StyleSheet,
@@ -76,30 +75,10 @@ export default function CafeScreen() {
       ) : errorMessage !== "" ? (
         <Text style={styles.message}>{errorMessage}</Text>
       ) : (
-        <FlatList
-          data={posts}
-          keyExtractor={(post) => post.id}
-          numColumns={2}
-          columnWrapperStyle={styles.gridRow}
-          contentContainerStyle={styles.grid}
-          ListEmptyComponent={<Text style={styles.message}>No posts here yet. Be the first!</Text>}
-          renderItem={({ item }) => (
-            <Pressable
-              style={styles.postCard}
-              onPress={() => setSelectedPost(item)} // open the popup with this post
-            >
-              <Image
-                source={
-                  item.image_url
-                    ? { uri: item.image_url }
-                    : require("@/assets/images/cafe-placeholder.jpg")
-                }
-                style={styles.postImage}
-                contentFit="cover"
-                transition={200}
-              />
-            </Pressable>
-          )}
+        <PostGrid
+          posts={posts}
+          onPressPost={setSelectedPost}
+          emptyText="No posts here yet. Be the first!"
         />
       )}
 
@@ -158,21 +137,6 @@ const styles = StyleSheet.create({
     marginTop: 40,
     paddingHorizontal: 24,
   },
-  grid: {
-    padding: 16,
-    paddingBottom: 120, // room for the nav pill
-    gap: 16,
-  },
-  gridRow: {
-    gap: 16,
-  },
-  postCard: {
-    flex: 1,
-    maxWidth: "48%", // keeps a single last post from stretching full width
-    borderRadius: 15,
-    overflow: "hidden",
-    backgroundColor: COLORS.card,
-  },
   addButton: {
     position: "absolute",
     right: 20,
@@ -183,9 +147,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     boxShadow: "0 6px 16px rgba(0, 0, 0, 0.25)",
-  },
-  postImage: {
-    width: "100%",
-    aspectRatio: 4 / 5,
   },
 });
