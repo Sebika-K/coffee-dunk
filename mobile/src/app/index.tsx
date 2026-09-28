@@ -1,6 +1,6 @@
 import { COLORS } from "@/constants/theme";
 import { Link, Stack } from "expo-router";
-import { ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
+import { ImageBackground, StyleSheet, Text, View } from "react-native";
 
 // The landing screen: first thing people see when they open the app
 export default function LandingScreen() {
@@ -23,10 +23,9 @@ export default function LandingScreen() {
 
         <View style={styles.row}>
           <Text style={styles.text}>Don't have an account? </Text>
-          {/* Sign Up screen comes in step 2.3 - this does nothing yet */}
-          <Pressable>
+          <Link href="/signup">
             <Text style={styles.link}>Sign Up</Text>
-          </Pressable>
+          </Link>
         </View>
       </View>
     </ImageBackground>

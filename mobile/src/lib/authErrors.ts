@@ -9,6 +9,10 @@ export function friendlyError(error: unknown): string {
       case "auth/wrong-password":
       case "auth/user-not-found":
         return "Email or password is incorrect.";
+      case "auth/email-already-in-use":
+        return "An account with this email already exists. Try logging in.";
+      case "auth/weak-password":
+        return "Password must be at least 6 characters.";
       case "auth/invalid-email":
         return "That doesn't look like a valid email address.";
       case "auth/too-many-requests":

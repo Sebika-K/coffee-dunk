@@ -3,7 +3,7 @@ import { friendlyError } from "@/lib/authErrors";
 import { auth } from "@/lib/firebase";
 import { FirebaseError } from "firebase/app";
 import { sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
-import { Stack } from "expo-router";
+import { Link, Stack } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
@@ -115,9 +115,10 @@ export default function LoginScreen() {
 
           <View style={styles.signupRow}>
             <Text style={styles.fadedText}>Don't have an account? </Text>
-            <Pressable>
+            {/* replace: swap this screen for Sign Up instead of stacking on top */}
+            <Link href="/signup" replace>
               <Text style={styles.linkText}>Sign Up</Text>
-            </Pressable>
+            </Link>
           </View>
         </View>
       </KeyboardAvoidingView>
