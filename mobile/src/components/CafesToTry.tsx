@@ -51,6 +51,12 @@ export function CafesToTry({ recommendations }: Props) {
                 {drinkName} here: {formatRating(cafe.average)} ★ · {cafe.count}{" "}
                 {cafe.count === 1 ? "rating" : "ratings"}
               </Text>
+              {/* Social proof: friends' opinions count most */}
+              {cafe.friends_count > 0 && (
+                <Text style={styles.friends}>
+                  ❤️ {cafe.friends_count} {cafe.friends_count === 1 ? "friend" : "friends"} rated it
+                </Text>
+              )}
             </View>
             <Ionicons name="chevron-forward" size={18} color={COLORS.placeholder} />
           </Pressable>
@@ -105,6 +111,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: COLORS.plum,
+  },
+  friends: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.heart,
   },
   detail: {
     fontSize: 13,

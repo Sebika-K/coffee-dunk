@@ -1,6 +1,7 @@
 import os
 import firebase_admin
 from firebase_admin import credentials, firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 # Path to the secret key, built from THIS file's location (routes/),
 # so it works no matter which folder the server is started from.
@@ -15,7 +16,7 @@ db = firestore.client()
 
 def get_posts_by_cafe(cafe_name):
     posts_ref = db.collection('posts')
-    query = posts_ref.where('cafe', '==', cafe_name)
+    query = posts_ref.where(filter=FieldFilter('cafe', '==', cafe_name))
     docs = query.stream()
     return [
         {
@@ -56,7 +57,7 @@ def doc_to_post(snap):
 def get_posts_where(field, value):
     """All posts where `field` equals `value`, e.g. get_posts_where('drink', 'latte')."""
     try:
-        docs = db.collection('uploads').where(field, '==', value).stream()
+        docs = db.collection('uploads').where(filter=FieldFilter(field, '==', value)).stream()
         items = [doc_to_post(snap) for snap in docs]
         print(f"🔎 posts where {field} == {value} → {len(items)} rows")
         return items
@@ -76,3 +77,21 @@ def get_posts_by_user(user_id):
 
 def get_posts_by_drink(drink):
     return get_posts_where('drink', drink)
+
+
+def get_friend_ids(user_id):
+    """The ids of a user's ACCEPTED friends (Phase 7.6)."""
+    try:
+        docs = (db.collection('friendships')
+                .where(filter=FieldFilter('members', 'array_contains', user_id))
+                .stream())
+        ids = set()
+        for snap in docs:
+            d = snap.to_dict() or {}
+            if d.get('status') != 'accepted':
+                continue
+            ids.update(m for m in d.get('members', []) if m != user_id)
+        return ids
+    except Exception as e:
+        print("❌ Firestore error in get_friend_ids:", e)
+        return set()

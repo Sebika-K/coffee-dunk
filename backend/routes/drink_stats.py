@@ -102,7 +102,24 @@ def favourite_drink(user_posts):
     return best[0]
 
 
-def recommend_cafes(posts, favourite, exclude_place_ids, exclude_user_id=None, limit=5):
+# A friend's rating counts as this many ratings (Phase 7.6): you know their taste
+FRIEND_WEIGHT = 2
+
+
+def weighted_confidence_score(weighted_ratings, prior_average, confidence=CONFIDENCE):
+    """
+    The same confidence score as above, but some ratings can count more.
+    weighted_ratings = [(rating, weight), ...]  e.g. [(5, 2), (4, 1)]
+    A weight of 2 counts that rating twice. With every weight = 1, this
+    gives exactly the same answer as confidence_score().
+    """
+    total = sum(rating * weight for rating, weight in weighted_ratings)
+    count = sum(weight for _, weight in weighted_ratings)
+    return (total + confidence * prior_average) / (count + confidence)
+
+
+def recommend_cafes(posts, favourite, exclude_place_ids, exclude_user_id=None,
+                    friend_ids=frozenset(), limit=5):
     """
     Cafés where OTHER people rated the user's favourite drink highly.
 
@@ -110,15 +127,18 @@ def recommend_cafes(posts, favourite, exclude_place_ids, exclude_user_id=None, l
     favourite         - the drink details (from favourite_drink)
     exclude_place_ids - cafés the user has already been to (we want NEW places)
     exclude_user_id   - the user themselves (their own ratings shouldn't recommend to them)
+    friend_ids        - the user's friends: their ratings count FRIEND_WEIGHT times (Phase 7.6)
 
     Returns cafés best first:
-      { "place_id": ..., "cafe_name": ..., "average": 4.7, "count": 3, "score": 4.1 }
+      { "place_id": ..., "cafe_name": ..., "average": 4.7, "count": 3,
+        "friends_count": 1, "score": 4.1 }
     """
     wanted = drink_key(favourite)
 
-    # Group ratings by café, for posts of exactly that drink
+    # Group (rating, weight) pairs by café, for posts of exactly that drink
     groups = {}
     names = {}
+    friend_raters = {}  # place_id -> set of friends who rated it
     for p in posts:
         place_id = p.get("place_id")
         if (
@@ -129,19 +149,25 @@ def recommend_cafes(posts, favourite, exclude_place_ids, exclude_user_id=None, l
             or p.get("user_id") == exclude_user_id
         ):
             continue
-        groups.setdefault(place_id, []).append(p["rating"])
+        is_friend = p.get("user_id") in friend_ids
+        weight = FRIEND_WEIGHT if is_friend else 1
+        groups.setdefault(place_id, []).append((p["rating"], weight))
         names.setdefault(place_id, p.get("cafe_name"))
+        if is_friend:
+            friend_raters.setdefault(place_id, set()).add(p.get("user_id"))
 
     results = []
-    for place_id, ratings in groups.items():
-        score = confidence_score(ratings, NEUTRAL_RATING)
+    for place_id, weighted in groups.items():
+        score = weighted_confidence_score(weighted, NEUTRAL_RATING)
         if score <= NEUTRAL_RATING:
             continue  # only recommend cafés where the drink is rated ABOVE average
+        ratings = [rating for rating, _ in weighted]
         results.append({
             "place_id": place_id,
             "cafe_name": names[place_id],
-            "average": round(sum(ratings) / len(ratings), 2),
+            "average": round(sum(ratings) / len(ratings), 2),  # the plain average we SHOW
             "count": len(ratings),
+            "friends_count": len(friend_raters.get(place_id, ())),
             "score": round(score, 2),
         })
 

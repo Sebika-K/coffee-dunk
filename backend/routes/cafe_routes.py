@@ -2,7 +2,7 @@ import os
 import requests
 from urllib.parse import quote
 from flask import Blueprint, render_template, request, jsonify, Response
-from .firebase_helpers import get_posts_by_place_id, get_posts_by_user, get_posts_by_drink
+from .firebase_helpers import get_posts_by_place_id, get_posts_by_user, get_posts_by_drink, get_friend_ids
 from .drink_stats import top_drinks, favourite_drink, recommend_cafes
 from dotenv import load_dotenv
 from firebase_admin import auth as admin_auth
@@ -298,17 +298,26 @@ def get_logged_in_user_id():
     Who is making this request? The app sends the user's Firebase ID token
     in the "Authorization: Bearer <token>" header. We ask Firebase to VERIFY
     it - a token can't be faked or edited, so this is proof of who they are.
-    Returns the user's id, or None if the token is missing or invalid.
+
+    Returns (user_id, None) if it worked, or (None, (message, status_code))
+    explaining what went wrong. Two very different failures:
+      401 - the USER's problem: no token, or a bad/expired one -> log in again
+      503 - the SERVER's problem: we couldn't reach Google to check the token
+            (a network hiccup) -> nothing wrong with the login, try again soon
     """
     header = request.headers.get("Authorization", "")
     if not header.startswith("Bearer "):
-        return None
+        return None, ("Please log in.", 401)
     token = header[len("Bearer "):]
     try:
-        return admin_auth.verify_id_token(token)["uid"]
+        return admin_auth.verify_id_token(token)["uid"], None
+    except admin_auth.CertificateFetchError as e:
+        # Couldn't download Google's public keys (e.g. a network timeout)
+        print("⚠️ Couldn't reach Google to verify the login (will retry next time):", e)
+        return None, ("Couldn't verify your login right now. Please try again.", 503)
     except Exception as e:
         print("❌ Invalid ID token:", e)
-        return None
+        return None, ("Please log in.", 401)
 
 
 @cafe_bp.route("/api/recommendations")
@@ -317,9 +326,10 @@ def api_recommendations():
     "You love X - try these cafés" for the logged-in user (Phase 6).
     Requires the Authorization header (see get_logged_in_user_id).
     """
-    user_id = get_logged_in_user_id()
-    if not user_id:
-        return jsonify({"error": "Please log in."}), 401
+    user_id, problem = get_logged_in_user_id()
+    if problem:
+        message, status = problem
+        return jsonify({"error": message}), status
 
     # 1) What's their favourite drink?
     my_posts = get_posts_by_user(user_id)
@@ -332,7 +342,10 @@ def api_recommendations():
 
     # 3) Cafés where others rate it highly, that they haven't been to yet
     been_to = {p["place_id"] for p in my_posts if p.get("place_id")}
-    cafes = recommend_cafes(drink_posts, favourite, been_to, exclude_user_id=user_id)
+    # (Phase 7.6: friends' ratings count more)
+    friend_ids = get_friend_ids(user_id)
+    cafes = recommend_cafes(drink_posts, favourite, been_to,
+                            exclude_user_id=user_id, friend_ids=friend_ids)
 
     return jsonify({
         "favourite": {k: favourite[k] for k in ("drink", "drink_custom", "milk", "temperature")},

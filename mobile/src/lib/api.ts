@@ -148,6 +148,7 @@ export type RecommendedCafe = {
   cafe_name: string | null;
   average: number; // how others rated your favourite drink THERE
   count: number;
+  friends_count: number; // how many of MY friends rated it (Phase 7.6)
   score: number;
 };
 

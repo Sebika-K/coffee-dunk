@@ -16,6 +16,7 @@ from routes.drink_stats import (
     favourite_drink,
     recommend_cafes,
     top_drinks,
+    weighted_confidence_score,
 )
 
 
@@ -113,6 +114,38 @@ class TestRecommendCafes(unittest.TestCase):
         )
         result = recommend_cafes(posts, self.favourite, set())
         self.assertEqual([r["place_id"] for r in result], ["greatCafe", "okCafe"])
+
+
+class TestFriendsTaste(unittest.TestCase):
+    favourite = post("latte", 5, milk="oat")
+
+    def test_equal_weights_match_the_normal_score(self):
+        self.assertAlmostEqual(
+            weighted_confidence_score([(5, 1), (4, 1)], prior_average=3.0),
+            confidence_score([5, 4], prior_average=3.0),
+        )
+
+    def test_a_friend_counts_more_than_a_stranger(self):
+        # Same rating, one café rated by a friend, one by a stranger
+        posts = [
+            post("latte", 5, milk="oat", place_id="friendCafe", user_id="bestie"),
+            post("latte", 5, milk="oat", place_id="strangerCafe", user_id="stranger"),
+        ]
+        result = recommend_cafes(posts, self.favourite, set(), friend_ids={"bestie"})
+        self.assertEqual(result[0]["place_id"], "friendCafe")
+
+    def test_friends_are_counted_once_each(self):
+        posts = [post("latte", 5, milk="oat", place_id="cafeA", user_id="bestie")] * 2 + [
+            post("latte", 4, milk="oat", place_id="cafeA", user_id="pal"),
+            post("latte", 4, milk="oat", place_id="cafeA", user_id="stranger"),
+        ]
+        result = recommend_cafes(posts, self.favourite, set(), friend_ids={"bestie", "pal"})
+        self.assertEqual(result[0]["friends_count"], 2)  # bestie + pal, not 3
+
+    def test_without_friends_nothing_changes(self):
+        posts = [post("latte", 5, milk="oat", place_id="cafeA", user_id="x")] * 3
+        result = recommend_cafes(posts, self.favourite, set())
+        self.assertEqual(result[0]["friends_count"], 0)
 
 
 if __name__ == "__main__":
