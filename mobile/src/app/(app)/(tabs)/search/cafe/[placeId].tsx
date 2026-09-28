@@ -3,8 +3,9 @@
 // the id comes from the address, e.g. /search/cafe/ChIJOzVa9gSLj4ARFQqljssXWUI
 
 import { PostGrid } from "@/components/PostGrid";
+import { TopDrinks } from "@/components/TopDrinks";
 import { COLORS } from "@/constants/theme";
-import { fetchCafePosts, Post } from "@/lib/api";
+import { fetchCafePosts, fetchTopDrinks, Post, TopDrink } from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
@@ -24,6 +25,7 @@ export default function CafeScreen() {
   const insets = useSafeAreaInsets();
 
   const [posts, setPosts] = useState<Post[]>([]);
+  const [topDrinks, setTopDrinks] = useState<TopDrink[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -35,8 +37,16 @@ export default function CafeScreen() {
 
       async function load() {
         try {
-          const result = await fetchCafePosts(placeId);
-          if (isActive) setPosts(result);
+          // Load posts and top drinks at the same time.
+          // If top drinks fail, just show none - the posts still matter most.
+          const [postsResult, drinksResult] = await Promise.all([
+            fetchCafePosts(placeId),
+            fetchTopDrinks(placeId).catch(() => []),
+          ]);
+          if (isActive) {
+            setPosts(postsResult);
+            setTopDrinks(drinksResult);
+          }
         } catch (error) {
           if (isActive) {
             setErrorMessage(error instanceof Error ? error.message : "Something went wrong.");
@@ -76,9 +86,10 @@ export default function CafeScreen() {
         <PostGrid
           posts={posts}
           onPressPost={(post) =>
-          router.push({ pathname: "/post/[postId]", params: { postId: post.id } })
-        }
+            router.push({ pathname: "/post/[postId]", params: { postId: post.id } })
+          }
           emptyText="No posts here yet. Be the first!"
+          header={<TopDrinks drinks={topDrinks} />}
         />
       )}
 

@@ -116,3 +116,23 @@ export async function searchCafesByName(query: string): Promise<CafeSearchResult
   }
   return data.results;
 }
+
+// One of a café's best drinks, as /api/cafes/<place_id>/top-drinks sends it (step 5a)
+export type TopDrink = {
+  drink: string;
+  drink_custom: string | null;
+  milk: string | null;
+  temperature: string | null;
+  average: number; // the plain average rating, e.g. 4.5 - what we SHOW
+  count: number; // how many ratings
+  score: number; // the confidence-weighted score - what the backend RANKED by
+};
+
+// Ask the backend for a café's top drinks (best first)
+export async function fetchTopDrinks(placeId: string): Promise<TopDrink[]> {
+  const url = `${API_URL}/api/cafes/${encodeURIComponent(placeId)}/top-drinks`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Server error (${response.status})`);
+  const data = await response.json();
+  return data.top_drinks;
+}
