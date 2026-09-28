@@ -3,10 +3,9 @@ import { friendlyError } from "@/lib/authErrors";
 import { auth } from "@/lib/firebase";
 import { FirebaseError } from "firebase/app";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { Link, Stack } from "expo-router";
+import { Link } from "expo-router";
 import { useState } from "react";
 import {
-  Alert,
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
@@ -47,8 +46,7 @@ export default function SignupScreen() {
       // 2) Save the username as the account's display name,
       //    just like the web app's auth.js did
       await updateProfile(result.user, { displayName: username.trim() });
-
-      Alert.alert("Welcome to Coffee Dunk!", `Account created for ${username.trim()}`);
+      // The app moves into the logged-in screens automatically (see _layout.tsx)
     } catch (error) {
       console.log("Signup failed:", error instanceof FirebaseError ? error.code : error);
       setErrorMessage(friendlyError(error));
@@ -63,7 +61,6 @@ export default function SignupScreen() {
       style={styles.background}
       resizeMode="cover"
     >
-      <Stack.Screen options={{ headerShown: false }} />
 
       <KeyboardAvoidingView
         style={styles.keyboardArea}

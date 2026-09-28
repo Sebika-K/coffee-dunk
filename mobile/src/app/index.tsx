@@ -1,5 +1,5 @@
 import { COLORS } from "@/constants/theme";
-import { Link, Stack } from "expo-router";
+import { Link } from "expo-router";
 import { ImageBackground, StyleSheet, Text, View } from "react-native";
 
 // The landing screen: first thing people see when they open the app
@@ -10,8 +10,6 @@ export default function LandingScreen() {
       style={styles.background}
       resizeMode="cover"
     >
-      {/* Hide the white header bar on this screen */}
-      <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.bottomLinks}>
         <View style={styles.row}>

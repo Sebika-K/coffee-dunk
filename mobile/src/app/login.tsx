@@ -3,7 +3,7 @@ import { friendlyError } from "@/lib/authErrors";
 import { auth } from "@/lib/firebase";
 import { FirebaseError } from "firebase/app";
 import { sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
-import { Link, Stack } from "expo-router";
+import { Link } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
@@ -34,9 +34,9 @@ export default function LoginScreen() {
     try {
       // Ask Firebase to check the email + password. `await` pauses here
       // until Firebase answers (it has to go over the internet).
-      const result = await signInWithEmailAndPassword(auth, email.trim(), password);
-      const name = result.user.displayName || result.user.email;
-      Alert.alert("Welcome back!", `Logged in as ${name}`);
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      // No need to navigate here: AuthContext notices the login and
+      // the root layout moves us into the app automatically.
     } catch (error) {
       console.log("Login failed:", error instanceof FirebaseError ? error.code : error);
       setErrorMessage(friendlyError(error));
@@ -65,8 +65,6 @@ export default function LoginScreen() {
       style={styles.background}
       resizeMode="cover"
     >
-      {/* Hide the white header bar on this screen */}
-      <Stack.Screen options={{ headerShown: false }} />
 
       {/* Moves the card up when the keyboard opens, so it isn't covered */}
       <KeyboardAvoidingView
