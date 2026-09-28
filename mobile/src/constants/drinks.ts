@@ -47,12 +47,44 @@ export const TASTING_NOTES = [
   { id: "creamy", label: "Creamy" },
 ] as const;
 
+// Where the coffee came from (Phase 7.3). Old posts have no source -> treated as "cafe".
+export const SOURCES = [
+  { id: "cafe", label: "☕ At a café" },
+  { id: "home", label: "🏠 Made at home" },
+] as const;
+
+// How a homemade coffee was brewed
+export const BREW_METHODS = [
+  { id: "espresso_machine", label: "Espresso machine" },
+  { id: "pour_over", label: "Pour-over" },
+  { id: "french_press", label: "French press" },
+  { id: "moka_pot", label: "Moka pot" },
+  { id: "aeropress", label: "AeroPress" },
+  { id: "drip_machine", label: "Drip machine" },
+  { id: "cold_brew", label: "Cold brew" },
+  { id: "instant", label: "Instant" },
+  { id: "other", label: "Other" },
+] as const;
+
 // TypeScript types built FROM the lists above, e.g. DrinkId = "espresso" | "americano" | ...
 // Add a drink to the list and the type updates by itself.
 export type DrinkId = (typeof DRINKS)[number]["id"];
 export type MilkId = (typeof MILKS)[number]["id"];
 export type TemperatureId = (typeof TEMPERATURES)[number]["id"];
 export type TastingNoteId = (typeof TASTING_NOTES)[number]["id"];
+export type SourceId = (typeof SOURCES)[number]["id"];
+export type BrewMethodId = (typeof BREW_METHODS)[number]["id"];
+
+// A homemade recipe. Everything except the method is optional.
+export type Recipe = {
+  method: BrewMethodId;
+  beans: string | null; // e.g. "Onyx Southern Weather"
+  coffee_g: number | null; // grams of coffee
+  water_ml: number | null;
+  milk_ml: number | null;
+  sweetener: string | null; // e.g. "1 tsp vanilla syrup"
+  steps: string | null; // free text
+};
 
 // Find the label to show for a saved id (falls back to the id itself if unknown)
 function labelFor(list: readonly { id: string; label: string }[], id: string): string {
@@ -83,4 +115,8 @@ export function describeDrink(post: {
 
 export function tastingNoteLabel(id: string): string {
   return labelFor(TASTING_NOTES, id);
+}
+
+export function brewMethodLabel(id: string): string {
+  return labelFor(BREW_METHODS, id);
 }

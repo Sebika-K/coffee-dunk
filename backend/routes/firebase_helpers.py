@@ -47,6 +47,9 @@ def doc_to_post(snap):
         'milk': d.get('milk'),
         'temperature': d.get('temperature'),
         'notes': d.get('notes') or [],
+        # Homemade coffee (Phase 7.3). Old posts have no source -> "cafe"
+        'source': d.get('source') or 'cafe',
+        'recipe': d.get('recipe'),
     }
 
 

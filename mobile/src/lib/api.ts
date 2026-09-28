@@ -2,6 +2,7 @@
 
 import Constants from "expo-constants";
 import { User } from "firebase/auth";
+import { Recipe } from "@/constants/drinks";
 
 // Where is the backend?
 // During development it runs on your Mac. The phone can't use "127.0.0.1"
@@ -72,6 +73,9 @@ export type Post = {
   milk: string | null; // e.g. "oat"
   temperature: string | null; // "hot" or "iced"
   notes: string[]; // tasting note ids, e.g. ["nutty", "smooth"]
+  // Homemade coffee (Phase 7.3)
+  source: "cafe" | "home"; // old posts -> "cafe"
+  recipe: Recipe | null; // only for "home" posts
 };
 
 // Ask the backend for all posts at one café (newest first)

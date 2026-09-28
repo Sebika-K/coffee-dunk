@@ -4,10 +4,14 @@ import { CafePicker, ChosenCafe } from "@/components/CafePicker";
 import { ChoiceChips, MultiChoiceChips } from "@/components/Chips";
 import { StarRating } from "@/components/StarRating";
 import {
+  BREW_METHODS,
+  BrewMethodId,
   DRINKS,
   DrinkId,
   MILKS,
   MilkId,
+  SOURCES,
+  SourceId,
   TASTING_NOTES,
   TastingNoteId,
   TEMPERATURES,
@@ -54,22 +58,37 @@ export default function UploadScreen() {
   const [temperature, setTemperature] = useState<TemperatureId | null>(null);
   const [notes, setNotes] = useState<TastingNoteId[]>([]);
 
+  // Café or homemade (Phase 7.3) - opened from a café page means café
+  const [source, setSource] = useState<SourceId>("cafe");
+  // Recipe fields (only used for homemade). Numbers are typed as text, converted when posting.
+  const [method, setMethod] = useState<BrewMethodId | null>(null);
+  const [beans, setBeans] = useState("");
+  const [coffeeGrams, setCoffeeGrams] = useState("");
+  const [waterMl, setWaterMl] = useState("");
+  const [milkMl, setMilkMl] = useState("");
+  const [sweetener, setSweetener] = useState("");
+  const [steps, setSteps] = useState("");
+  const isHome = source === "home";
+
   // A drink is required - and if it's "Other", it needs a typed name
   const hasDrink = drink !== null && (drink !== "other" || drinkCustom.trim() !== "");
 
   // Everything a post needs (caption, milk, hot/iced and notes are optional)
-  const canPost = photoUri !== null && cafe !== null && hasDrink && rating > 0 && !isPosting;
+  // At a café -> needs the café. Made at home -> needs the brew method.
+  const hasWhere = isHome ? method !== null : cafe !== null;
+  const canPost = photoUri !== null && hasWhere && hasDrink && rating > 0 && !isPosting;
 
   async function handlePost() {
     // These checks also tell TypeScript the values can't be null below
-    if (!photoUri || !cafe || !user || !drink) return;
+    if (!photoUri || !user || !drink) return;
+    if (isHome ? !method : !cafe) return;
 
     setIsPosting(true);
     try {
       await createPost({
         photoUri,
-        placeId: cafe.placeId,
-        cafeName: cafe.name,
+        placeId: isHome ? null : cafe?.placeId ?? null,
+        cafeName: isHome ? null : cafe?.name ?? null,
         caption: caption.trim(),
         rating,
         user,
@@ -78,6 +97,19 @@ export default function UploadScreen() {
         milk,
         temperature,
         notes,
+        source,
+        recipe:
+          isHome && method
+            ? {
+                method,
+                beans: beans.trim() || null, // empty text -> null
+                coffee_g: toNumber(coffeeGrams),
+                water_ml: toNumber(waterMl),
+                milk_ml: toNumber(milkMl),
+                sweetener: sweetener.trim() || null,
+                steps: steps.trim() || null,
+              }
+            : null,
       });
       router.back(); // close the upload screen - the café page reloads and shows the new post
     } catch (error) {
@@ -164,8 +196,56 @@ export default function UploadScreen() {
           </Pressable>
         </View>
 
-        <Text style={styles.label}>Café</Text>
-        <CafePicker selected={cafe} onSelect={setCafe} onClear={() => setCafe(null)} />
+        <Text style={styles.label}>Where's it from?</Text>
+        <ChoiceChips
+          options={SOURCES}
+          selected={source}
+          onChange={(value) => value && setSource(value)} // one must always be chosen
+        />
+
+        {isHome ? (
+          <>
+            <Text style={styles.label}>How did you make it?</Text>
+            <ChoiceChips options={BREW_METHODS} selected={method} onChange={setMethod} />
+
+            <Text style={styles.label}>Recipe (optional)</Text>
+            <TextInput
+              style={styles.otherInput}
+              placeholder="Beans, e.g. Onyx Southern Weather"
+              placeholderTextColor={COLORS.placeholder}
+              value={beans}
+              onChangeText={setBeans}
+              maxLength={60}
+            />
+            <View style={styles.amountRow}>
+              <AmountInput label="Coffee" unit="g" value={coffeeGrams} onChange={setCoffeeGrams} />
+              <AmountInput label="Water" unit="ml" value={waterMl} onChange={setWaterMl} />
+              <AmountInput label="Milk" unit="ml" value={milkMl} onChange={setMilkMl} />
+            </View>
+            <TextInput
+              style={styles.otherInput}
+              placeholder="Sweetener, e.g. 1 tsp vanilla syrup"
+              placeholderTextColor={COLORS.placeholder}
+              value={sweetener}
+              onChangeText={setSweetener}
+              maxLength={60}
+            />
+            <TextInput
+              style={styles.captionInput}
+              placeholder={"Steps, e.g.\n1. Bloom 30s with 40ml water\n2. Pour the rest slowly"}
+              placeholderTextColor={COLORS.placeholder}
+              value={steps}
+              onChangeText={setSteps}
+              multiline
+              maxLength={600}
+            />
+          </>
+        ) : (
+          <>
+            <Text style={styles.label}>Café</Text>
+            <CafePicker selected={cafe} onSelect={setCafe} onClear={() => setCafe(null)} />
+          </>
+        )}
 
         <Text style={styles.label}>What did you drink?</Text>
         <ChoiceChips options={DRINKS} selected={drink} onChange={setDrink} />
@@ -204,6 +284,43 @@ export default function UploadScreen() {
         />
         <Text style={styles.counter}>{caption.length}/300</Text>
       </ScrollView>
+    </View>
+  );
+}
+
+// "18" -> 18, "" or "abc" -> null
+function toNumber(text: string): number | null {
+  const n = parseFloat(text.replace(",", ".")); // allow "12,5" as well as "12.5"
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+// A small labelled number box, e.g.  Coffee [ 18 ] g
+function AmountInput({
+  label,
+  unit,
+  value,
+  onChange,
+}: {
+  label: string;
+  unit: string;
+  value: string;
+  onChange: (text: string) => void;
+}) {
+  return (
+    <View style={styles.amountBox}>
+      <Text style={styles.amountLabel}>{label}</Text>
+      <View style={styles.amountInputRow}>
+        <TextInput
+          style={styles.amountInput}
+          value={value}
+          onChangeText={onChange}
+          keyboardType="decimal-pad" // number keyboard
+          placeholder="–"
+          placeholderTextColor={COLORS.placeholder}
+          maxLength={5}
+        />
+        <Text style={styles.amountUnit}>{unit}</Text>
+      </View>
     </View>
   );
 }
@@ -267,6 +384,37 @@ const styles = StyleSheet.create({
     borderColor: "rgba(125, 46, 77, 0.2)",
     fontSize: 15,
     color: COLORS.plum,
+  },
+  amountRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  amountBox: {
+    flex: 1,
+    gap: 4,
+  },
+  amountLabel: {
+    fontSize: 12,
+    color: COLORS.placeholder,
+  },
+  amountInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 46,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "rgba(125, 46, 77, 0.2)",
+  },
+  amountInput: {
+    flex: 1,
+    fontSize: 15,
+    color: COLORS.plum,
+  },
+  amountUnit: {
+    color: COLORS.placeholder,
+    fontSize: 14,
   },
   captionInput: {
     minHeight: 90,

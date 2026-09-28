@@ -2,7 +2,14 @@
 // Same data shape as the web app's upload.js, so old and new posts match.
 
 import { db, storage } from "@/lib/firebase";
-import { DrinkId, MilkId, TastingNoteId, TemperatureId } from "@/constants/drinks";
+import {
+  DrinkId,
+  MilkId,
+  Recipe,
+  SourceId,
+  TastingNoteId,
+  TemperatureId,
+} from "@/constants/drinks";
 import { Post } from "@/lib/api";
 import { User } from "firebase/auth";
 import {
@@ -24,8 +31,8 @@ import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage
 
 type NewPost = {
   photoUri: string; // the photo's location on the phone (file:///...)
-  placeId: string;
-  cafeName: string;
+  placeId: string | null; // null for homemade coffee
+  cafeName: string | null;
   caption: string;
   rating: number;
   user: User;
@@ -35,6 +42,9 @@ type NewPost = {
   milk: MilkId | null;
   temperature: TemperatureId | null;
   notes: TastingNoteId[];
+  // Homemade coffee (Phase 7.3)
+  source: SourceId;
+  recipe: Recipe | null;
 };
 
 export async function createPost({
@@ -49,6 +59,8 @@ export async function createPost({
   milk,
   temperature,
   notes,
+  source,
+  recipe,
 }: NewPost) {
   // 1) Read the photo from the phone as a "blob" (raw file data)
   const photoResponse = await fetch(photoUri);
@@ -78,6 +90,9 @@ export async function createPost({
     milk: milk,
     temperature: temperature,
     notes: notes,
+    // Where it came from; homemade posts carry their recipe
+    source: source,
+    recipe: source === "home" ? recipe : null,
   });
 }
 
@@ -121,6 +136,8 @@ export function docToPost(docSnap: DocumentSnapshot): Post {
     milk: d.milk ?? null,
     temperature: d.temperature ?? null,
     notes: Array.isArray(d.notes) ? d.notes : [],
+    source: d.source === "home" ? "home" : "cafe", // old posts have no source
+    recipe: d.recipe ?? null,
   };
 }
 
