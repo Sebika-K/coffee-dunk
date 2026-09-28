@@ -5,6 +5,7 @@ import { db, storage } from "@/lib/firebase";
 import { updateProfile, User } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { syncPublicProfile } from "@/lib/users";
 
 // Upload a new profile photo and set it as the account's photo
 export async function saveProfilePhoto(user: User, photoUri: string) {
@@ -18,13 +19,14 @@ export async function saveProfilePhoto(user: User, photoUri: string) {
   // instead of showing the old one they remembered (cached)
   const url = `${await getDownloadURL(photoRef)}&v=${Date.now()}`;
   await updateProfile(user, { photoURL: url });
+  await syncPublicProfile(user); // so friends see the new photo too
 }
 
 // Save a new username: on the account itself AND in the users collection
 export async function saveUsername(user: User, username: string) {
   await updateProfile(user, { displayName: username });
-  // merge: true = only change this field, keep everything else (like bio)
-  await setDoc(doc(db, "users", user.uid), { username }, { merge: true });
+  // Update the public profile (username + lowercase copy for search), keeping the bio
+  await syncPublicProfile(user);
 }
 
 // Save a new bio in the users collection

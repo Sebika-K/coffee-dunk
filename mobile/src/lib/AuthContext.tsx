@@ -1,6 +1,7 @@
 // Keeps track of WHO is logged in, and shares it with every screen.
 
 import { auth } from "@/lib/firebase";
+import { syncPublicProfile } from "@/lib/users";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
 
@@ -37,6 +38,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setDisplayName(firebaseUser?.displayName ?? null);
       setPhotoURL(firebaseUser?.photoURL ?? null);
       setIsLoading(false);
+
+      // Make sure this user has an up-to-date public profile (so friends can find them).
+      // This also fills in profiles for accounts created before Phase 7.
+      if (firebaseUser) {
+        syncPublicProfile(firebaseUser).catch((error) =>
+          console.log("Public profile sync failed:", error)
+        );
+      }
     });
     return stopListening; // clean up if the provider is ever removed
   }, []);

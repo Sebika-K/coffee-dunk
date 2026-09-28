@@ -2,6 +2,7 @@ import { COLORS } from "@/constants/theme";
 import { friendlyError } from "@/lib/authErrors";
 import { useAuth } from "@/lib/AuthContext";
 import { auth } from "@/lib/firebase";
+import { syncPublicProfile } from "@/lib/users";
 import { FirebaseError } from "firebase/app";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { Link } from "expo-router";
@@ -48,6 +49,7 @@ export default function SignupScreen() {
       // 2) Save the username as the account's display name,
       //    just like the web app's auth.js did
       await updateProfile(result.user, { displayName: username.trim() });
+      await syncPublicProfile(result.user); // public profile with the chosen username
       refreshUser(); // show the username right away (not the email)
       // The app moves into the logged-in screens automatically (see _layout.tsx)
     } catch (error) {
