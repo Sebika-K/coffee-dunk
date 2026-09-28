@@ -1,13 +1,15 @@
-// New post screen. Step 2.7a: choosing the photo.
-// (Café, caption and rating come in 2.7b; posting in 2.7c.)
+// New post screen: photo, café, caption and rating.
+// (Actually posting to Firebase comes in step 2.7c.)
 
+import { CafePicker, ChosenCafe } from "@/components/CafePicker";
+import { StarRating } from "@/components/StarRating";
 import { COLORS } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Settings shared by the camera and the gallery
@@ -24,6 +26,21 @@ export default function UploadScreen() {
   const insets = useSafeAreaInsets();
 
   const [photoUri, setPhotoUri] = useState<string | null>(null); // the chosen photo on the phone
+  const [cafe, setCafe] = useState<ChosenCafe | null>(
+    // Start with the café we came from, if any
+    placeId && name ? { placeId, name } : null
+  );
+  const [caption, setCaption] = useState("");
+  const [rating, setRating] = useState(0); // 0 = not rated yet
+
+  // Everything a post needs (caption is optional)
+  const canPost = photoUri !== null && cafe !== null && rating > 0;
+
+  function handlePost() {
+    // Step 2.7c will upload to Firebase here. For now, prove we have everything.
+    console.log("Ready to post:", { photoUri, cafe, caption: caption.trim(), rating });
+    Alert.alert("Almost there!", "Posting to Firebase comes in the next step.");
+  }
 
   async function takePhoto() {
     // The camera needs the user's permission first
@@ -51,12 +68,20 @@ export default function UploadScreen() {
           <Ionicons name="close" size={24} color={COLORS.plum} />
         </Pressable>
         <Text style={styles.title}>New Post</Text>
-        <View style={styles.iconButton} />{/* empty box to keep the title centred */}
+        <Pressable
+          onPress={handlePost}
+          disabled={!canPost}
+          style={[styles.postButton, !canPost && styles.postButtonDisabled]}
+        >
+          <Text style={styles.postButtonText}>Post</Text>
+        </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {name && <Text style={styles.cafeName}>☕ {name}</Text>}
-
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled" // taps on café results work even while typing
+        automaticallyAdjustKeyboardInsets // scroll so the keyboard doesn't cover the caption
+      >
         {/* The photo area: tap it to pick from the gallery */}
         <Pressable style={styles.photoStage} onPress={pickFromGallery}>
           {photoUri ? (
@@ -89,6 +114,24 @@ export default function UploadScreen() {
             <Text style={styles.pickerText}>Gallery</Text>
           </Pressable>
         </View>
+
+        <Text style={styles.label}>Café</Text>
+        <CafePicker selected={cafe} onSelect={setCafe} onClear={() => setCafe(null)} />
+
+        <Text style={styles.label}>Your rating</Text>
+        <StarRating value={rating} onChange={setRating} />
+
+        <Text style={styles.label}>Caption</Text>
+        <TextInput
+          style={styles.captionInput}
+          placeholder="How was it? (optional)"
+          placeholderTextColor={COLORS.placeholder}
+          value={caption}
+          onChangeText={setCaption}
+          multiline // lets the caption be several lines
+          maxLength={300}
+        />
+        <Text style={styles.counter}>{caption.length}/300</Text>
       </ScrollView>
     </View>
   );
@@ -121,11 +164,46 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 16,
   },
-  cafeName: {
-    fontSize: 16,
-    fontWeight: "600",
+  postButton: {
+    height: 36,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+    backgroundColor: COLORS.plum,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  postButtonDisabled: {
+    opacity: 0.35,
+  },
+  postButtonText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  label: {
+    marginTop: 8,
+    marginBottom: -6,
+    fontSize: 14,
+    fontWeight: "700",
     color: COLORS.plum,
-    textAlign: "center",
+  },
+  captionInput: {
+    minHeight: 90,
+    borderRadius: 12,
+    padding: 14,
+    paddingTop: 12,
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "rgba(125, 46, 77, 0.2)",
+    fontSize: 15,
+    color: COLORS.plum,
+    textAlignVertical: "top", // Android: start typing at the top, not the middle
+  },
+  counter: {
+    alignSelf: "flex-end",
+    marginTop: -10,
+    fontSize: 12,
+    color: COLORS.placeholder,
   },
   photoStage: {
     width: "100%",

@@ -83,3 +83,29 @@ export async function fetchCafePosts(placeId: string): Promise<Post[]> {
   }
   return data.posts;
 }
+
+// A café found by name (from /api/cafes/search, step 1.2's original route)
+export type CafeSearchResult = {
+  name: string;
+  place_id: string;
+  address: string | null;
+  rating: number | null;
+};
+
+// Find cafés by name, e.g. "mozart austin" - used when choosing a café for a post
+export async function searchCafesByName(query: string): Promise<CafeSearchResult[]> {
+  const url = `${API_URL}/api/cafes/search?q=${encodeURIComponent(query)}`;
+
+  let response: Response;
+  try {
+    response = await fetch(url);
+  } catch {
+    throw new Error("Can't reach the Coffee Dunk server. Is the backend running?");
+  }
+
+  const data = await response.json();
+  if (!response.ok || data.error_message) {
+    throw new Error(data.error || data.error_message || `Server error (${response.status})`);
+  }
+  return data.results;
+}
