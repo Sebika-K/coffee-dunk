@@ -14,6 +14,7 @@ import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { avatarSource, formatDate } from "@/lib/format";
+import { openUserProfile } from "@/lib/navigation";
 import { deletePost, fetchPost } from "@/lib/posts";
 import { isPostSaved, savePost, unsavePost } from "@/lib/saved";
 import { Ionicons } from "@expo/vector-icons";
@@ -180,12 +181,16 @@ export default function PostScreen() {
             </View>
           )}
 
-          {/* Who and when */}
-          <View style={styles.userRow}>
+          {/* Who and when - tap to open their profile */}
+          <Pressable
+            onPress={() => openUserProfile(post.user_id, user?.uid)}
+            style={styles.userRow}
+            hitSlop={6}
+          >
             <Image source={avatarSource(post.user_avatar)} style={styles.avatar} />
             <Text style={styles.username}>{post.user ?? "Anon"}</Text>
             {post.created_at && <Text style={styles.date}>{formatDate(post.created_at)}</Text>}
-          </View>
+          </Pressable>
 
           {/* What they drank + how it was */}
           {drinkName && <Text style={styles.drink}>{drinkName}</Text>}

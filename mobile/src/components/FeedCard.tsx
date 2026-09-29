@@ -6,7 +6,9 @@ import { StarRating } from "@/components/StarRating";
 import { brewMethodLabel, describeDrink, tastingNoteLabel } from "@/constants/drinks";
 import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
+import { useAuth } from "@/lib/AuthContext";
 import { avatarSource, formatTimeAgo } from "@/lib/format";
+import { openUserProfile } from "@/lib/navigation";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -28,6 +30,7 @@ export function FeedCard({
   isLiked = false,
   onToggleLike,
 }: Props) {
+  const { user } = useAuth();
   const drinkName = describeDrink(post);
 
   function openPost() {
@@ -44,14 +47,18 @@ export function FeedCard({
 
   return (
     <Pressable onPress={openPost} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
-      {/* Who + when */}
-      <View style={styles.userRow}>
+      {/* Who + when - its own tap target, opens their profile */}
+      <Pressable
+        onPress={() => openUserProfile(post.user_id, user?.uid)}
+        style={styles.userRow}
+        hitSlop={6}
+      >
         <Image source={avatarSource(post.user_avatar)} style={styles.avatar} />
         <Text style={styles.username} numberOfLines={1}>
           {post.user ?? "Anon"}
         </Text>
         {post.created_at && <Text style={styles.time}>{formatTimeAgo(post.created_at)}</Text>}
-      </View>
+      </Pressable>
 
       {/* The coffee */}
       <Image

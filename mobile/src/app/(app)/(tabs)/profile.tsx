@@ -4,16 +4,16 @@
 import { ChoiceChips } from "@/components/Chips";
 import { DiaryCard } from "@/components/DiaryCard";
 import { PostGrid } from "@/components/PostGrid";
+import { ProfileSummary } from "@/components/ProfileSummary";
 import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { fetchMyFriends } from "@/lib/friends";
 import { fetchUserBio, fetchUserPosts } from "@/lib/posts";
 import { fetchSavedPosts } from "@/lib/saved";
-import { calculateStats, formatRating } from "@/lib/stats";
+import { calculateStats } from "@/lib/stats";
 import { Ionicons } from "@expo/vector-icons";
 import { User } from "firebase/auth";
-import { Image } from "expo-image";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
@@ -107,19 +107,8 @@ export default function ProfileScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.profileRow}>
-        <Image source={avatar} style={styles.avatar} contentFit="cover" />
-        <View style={styles.stats}>
-          <Stat value={stats.totalPosts} label="POSTS" />
-          <Stat value={stats.cafesTried} label="CAFÉS" />
-          <Stat
-            value={stats.averageRating === null ? "–" : formatRating(stats.averageRating)}
-            label="AVG ★"
-          />
-        </View>
-      </View>
+      <ProfileSummary avatar={avatar} stats={stats} bio={bio} />
 
-      {bio !== "" && <Text style={styles.bio}>{bio}</Text>}
       {!isLoading && posts.length > 0 && <DiaryCard stats={stats} />}
 
       {/* Switch the grid below between my posts and my saved ones */}
@@ -171,16 +160,6 @@ export default function ProfileScreen() {
   );
 }
 
-// One number + label, e.g. "12 POSTS"
-function Stat({ value, label }: { value: number | string; label: string }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={styles.statNumber}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   background: {
     flex: 1,
@@ -227,44 +206,6 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 11,
     fontWeight: "700",
-  },
-  profileRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 20,
-    gap: 16,
-  },
-  avatar: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    borderWidth: 2,
-    borderColor: "white",
-  },
-  stats: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  stat: {
-    alignItems: "center",
-  },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: COLORS.plum,
-  },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: COLORS.plum,
-    marginTop: 2,
-  },
-  bio: {
-    marginTop: 14,
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.plum,
   },
   error: {
     marginTop: 12,

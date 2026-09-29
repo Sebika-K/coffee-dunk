@@ -3,9 +3,10 @@
 import { COLORS } from "@/constants/theme";
 import { avatarSource } from "@/lib/format";
 import { PublicProfile } from "@/lib/friends";
+import { openUserProfile } from "@/lib/navigation";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type Props = {
   likers: PublicProfile[];
@@ -21,12 +22,16 @@ export function LikedByList({ likers }: Props) {
         <Text style={styles.title}>Liked by</Text>
       </View>
       {likers.map((person) => (
-        <View key={person.id} style={styles.row}>
+        <Pressable
+          key={person.id}
+          style={styles.row}
+          onPress={() => openUserProfile(person.id, undefined)}
+        >
           <Image source={avatarSource(person.photo_url)} style={styles.avatar} />
           <Text style={styles.name} numberOfLines={1}>
             {person.username}
           </Text>
-        </View>
+        </Pressable>
       ))}
       <Text style={styles.privateNote}>Only you can see who liked your post.</Text>
     </View>

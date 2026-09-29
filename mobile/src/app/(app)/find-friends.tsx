@@ -3,6 +3,7 @@
 import { COLORS } from "@/constants/theme";
 import { useAuth } from "@/lib/AuthContext";
 import { avatarSource } from "@/lib/format";
+import { openUserProfile } from "@/lib/navigation";
 import {
   acceptFriendRequest,
   FriendState,
@@ -130,10 +131,13 @@ export default function FindFriendsScreen() {
         }
         renderItem={({ item }) => (
           <View style={styles.row}>
-            <Image source={avatarSource(item.photo_url)} style={styles.avatar} />
-            <Text style={styles.username} numberOfLines={1}>
-              {item.username}
-            </Text>
+            {/* Photo + name open their profile */}
+            <Pressable style={styles.person} onPress={() => openUserProfile(item.id, undefined)}>
+              <Image source={avatarSource(item.photo_url)} style={styles.avatar} />
+              <Text style={styles.username} numberOfLines={1}>
+                {item.username}
+              </Text>
+            </Pressable>
             <StateButton
               state={item.state}
               onAdd={() => handleAdd(item)}
@@ -243,6 +247,12 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 12,
     backgroundColor: "white",
+  },
+  person: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   avatar: {
     width: 44,

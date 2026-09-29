@@ -10,6 +10,7 @@ import {
   PublicProfile,
   removeFriendship,
 } from "@/lib/friends";
+import { openUserProfile } from "@/lib/navigation";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useFocusEffect } from "expo-router";
@@ -189,10 +190,13 @@ function PersonRow({
 }) {
   return (
     <View style={styles.row}>
-      <Image source={avatarSource(person.photo_url)} style={styles.avatar} />
-      <Text style={styles.username} numberOfLines={1}>
-        {person.username}
-      </Text>
+      {/* Photo + name open their profile; the buttons on the right do their own thing */}
+      <Pressable style={styles.person} onPress={() => openUserProfile(person.id, undefined)}>
+        <Image source={avatarSource(person.photo_url)} style={styles.avatar} />
+        <Text style={styles.username} numberOfLines={1}>
+          {person.username}
+        </Text>
+      </Pressable>
       {busy ? <ActivityIndicator color={COLORS.plum} /> : <View style={styles.actions}>{children}</View>}
     </View>
   );
@@ -247,6 +251,12 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 12,
     backgroundColor: "white",
+  },
+  person: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   avatar: {
     width: 44,
