@@ -8,6 +8,7 @@
 
 import { Post } from "@/lib/api";
 import { db } from "@/lib/firebase";
+import { fetchFriendIds } from "@/lib/friends";
 import { fetchPost } from "@/lib/posts";
 import {
   collection,
@@ -47,9 +48,24 @@ export async function fetchSavedIds(myId: string): Promise<string[]> {
 }
 
 // The saved posts themselves, in the order they were saved.
-// If a friend deleted a post, it simply disappears from the list.
+// Only posts you can still see: your own and your CURRENT friends'.
+//   - A friend deleted the post -> it disappears.
+//   - You unfriended them       -> their posts disappear (the save stays, so
+//                                  they come back if you become friends again).
+// The database rules block these too; checking here as well means the app
+// never depends on the rules alone.
 export async function fetchSavedPosts(myId: string): Promise<Post[]> {
-  const ids = await fetchSavedIds(myId);
-  const posts = await Promise.all(ids.map((id) => fetchPost(id).catch(() => null)));
-  return posts.filter((p): p is Post => p !== null);
+  const [ids, friendIds] = await Promise.all([fetchSavedIds(myId), fetchFriendIds(myId)]);
+  const canSee = new Set([myId, ...friendIds]);
+
+  const posts = await Promise.all(
+    ids.map((id) =>
+      fetchPost(id).catch((error) => {
+        // Expected for an ex-friend's post once the rules are published
+        console.log(`Saved post ${id} not readable:`, error.code ?? error);
+        return null;
+      })
+    )
+  );
+  return posts.filter((p): p is Post => p !== null && p.user_id !== null && canSee.has(p.user_id));
 }
