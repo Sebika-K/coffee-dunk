@@ -3,6 +3,7 @@ import requests
 from urllib.parse import quote
 from flask import Blueprint, render_template, request, jsonify, Response
 from .firebase_helpers import get_posts_by_place_id, get_posts_by_user, get_posts_by_drink, get_friend_ids
+from .parsing import parse_coordinates, parse_radius
 from .drink_stats import top_drinks, favourite_drink, recommend_cafes
 from dotenv import load_dotenv
 from firebase_admin import auth as admin_auth
@@ -27,7 +28,7 @@ def find_cafes_near_city(city, radius):
     Returns (cafes, error). If something goes wrong, cafes is [] and
     error explains why; otherwise error is None.
     """
-    # 1) City name -> latitude/longitude
+    # City name -> latitude/longitude
     geo = requests.get(
         GEOCODE_URL, params={"address": city, "key": GOOGLE_API_KEY}, timeout=10
     ).json()
@@ -35,12 +36,19 @@ def find_cafes_near_city(city, radius):
         return [], geo.get("error_message") or geo.get("status")
 
     location = geo["results"][0]["geometry"]["location"]
+    return find_cafes_near_point(location["lat"], location["lng"], radius)
 
-    # 2) Cafés near that point
+
+def find_cafes_near_point(lat, lng, radius):
+    """
+    Cafés around a map point (latitude, longitude). Used for a searched city
+    (after turning its name into a point) and for "Near me" (the phone's
+    own location, Phase 8.1d). Returns (cafes, error) like above.
+    """
     places = requests.get(
         NEARBY_URL,
         params={
-            "location": f"{location['lat']},{location['lng']}",
+            "location": f"{lat},{lng}",
             "radius": radius,
             "type": "cafe",
             "keyword": "coffee",
@@ -51,7 +59,7 @@ def find_cafes_near_city(city, radius):
     if places.get("status") not in ("OK", "ZERO_RESULTS"):
         return [], places.get("error_message") or places.get("status")
 
-    # 3) Keep only the fields our app uses
+    # Keep only the fields our app uses
     cafes = []
     for place in places.get("results", []):
         photos = place.get("photos")
@@ -63,17 +71,9 @@ def find_cafes_near_city(city, radius):
             "photo_ref": photos[0]["photo_reference"] if photos else None,
         })
 
-    # 4) Highest rated first (cafés with no rating go last)
+    # Highest rated first (cafés with no rating go last)
     cafes.sort(key=lambda c: c["rating"] or 0, reverse=True)
     return cafes, None
-
-
-def parse_radius(value):
-    """Read the radius from the URL safely: default 5000 m, max 50000 m (Google's limit)."""
-    try:
-        return max(1, min(int(value), 50000))
-    except (TypeError, ValueError):
-        return 5000
 
 
 @cafe_bp.route("/results")
@@ -100,16 +100,26 @@ def results():
 def api_cafes_nearby():
     """
     Mobile app version: same search, but returns plain JSON data.
-    Example: /api/cafes/nearby?city=Austin&radius=5000
+    Two ways to say WHERE:
+      /api/cafes/nearby?city=Austin&radius=5000
+      /api/cafes/nearby?lat=30.27&lng=-97.74     ("Near me", Phase 8.1d)
     """
     city = (request.args.get("city") or "").strip()
-    if not city:
-        return jsonify({"error": "Missing city. Use ?city=..."}), 400
+    has_point = request.args.get("lat") is not None or request.args.get("lng") is not None
+    point = parse_coordinates(request.args.get("lat"), request.args.get("lng")) if has_point else None
+
+    if has_point and point is None:
+        return jsonify({"error": "Invalid location. Use ?lat=...&lng=... with real coordinates."}), 400
+    if not city and point is None:
+        return jsonify({"error": "Missing city. Use ?city=... (or ?lat=...&lng=...)"}), 400
 
     radius = parse_radius(request.args.get("radius"))
 
     try:
-        cafes, error = find_cafes_near_city(city, radius)
+        if point is not None:
+            cafes, error = find_cafes_near_point(point[0], point[1], radius)
+        else:
+            cafes, error = find_cafes_near_city(city, radius)
     except requests.RequestException as e:
         return jsonify({"error": "Could not reach Google", "detail": str(e)}), 502
 

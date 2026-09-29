@@ -31,8 +31,16 @@ export type Cafe = {
 
 // Ask the backend for cafés near a city
 export async function fetchNearbyCafes(city: string): Promise<Cafe[]> {
-  const url = `${API_URL}/api/cafes/nearby?city=${encodeURIComponent(city)}`;
+  return fetchCafes(`${API_URL}/api/cafes/nearby?city=${encodeURIComponent(city)}`);
+}
 
+// Ask the backend for cafés near a map point - the phone's location ("Near me")
+export async function fetchCafesNearPoint(latitude: number, longitude: number): Promise<Cafe[]> {
+  return fetchCafes(`${API_URL}/api/cafes/nearby?lat=${latitude}&lng=${longitude}`);
+}
+
+// Shared by both searches above
+async function fetchCafes(url: string): Promise<Cafe[]> {
   let response: Response;
   try {
     response = await fetch(url);

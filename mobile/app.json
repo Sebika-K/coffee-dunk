@@ -39,6 +39,12 @@
           "photosPermission": "Allow Coffee Dunk to access your photos so you can post your coffee.",
           "cameraPermission": "Allow Coffee Dunk to use your camera so you can snap your coffee."
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Coffee Dunk to use your location to find caf\u00e9s near you."
+        }
       ]
     ],
     "experiments": {

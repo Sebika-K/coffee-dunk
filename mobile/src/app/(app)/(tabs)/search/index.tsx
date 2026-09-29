@@ -11,13 +11,22 @@ import { FriendCafe, groupFriendCafes } from "@/lib/stats";
 import { CafeCard } from "@/components/CafeCard";
 import { SearchBar } from "@/components/SearchBar";
 import { COLORS } from "@/constants/theme";
-import { Cafe, fetchNearbyCafes, fetchRecommendations, Recommendations } from "@/lib/api";
+import {
+  Cafe,
+  fetchCafesNearPoint,
+  fetchNearbyCafes,
+  fetchRecommendations,
+  Recommendations,
+} from "@/lib/api";
+import { addRecentSearch, clearRecentSearches, getRecentSearches } from "@/lib/recentSearches";
+import * as Location from "expo-location";
 import { useAuth } from "@/lib/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   ImageBackground,
   Keyboard,
@@ -37,6 +46,8 @@ export default function DiscoverScreen() {
   const [cafes, setCafes] = useState<Cafe[] | null>(null); // null = haven't searched yet
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [resultsTitle, setResultsTitle] = useState(""); // e.g. "Cafés near you"
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendations | null>(null);
   const [friendCafes, setFriendCafes] = useState<FriendCafe[]>([]);
 
@@ -67,20 +78,59 @@ export default function DiscoverScreen() {
     }, [user])
   );
 
-  async function handleSearch() {
-    if (city.trim() === "" || isLoading) return;
+  // Load recent searches (saved on this phone) once, when Discover first opens
+  useEffect(() => {
+    getRecentSearches().then(setRecentSearches);
+  }, []);
 
+  // Shared by every kind of search: show a spinner, run it, show results or an error
+  async function runSearch(title: string, search: () => Promise<Cafe[]>) {
+    if (isLoading) return;
     Keyboard.dismiss(); // put the keyboard away so the results are visible
     setErrorMessage("");
     setIsLoading(true);
     try {
-      const results = await fetchNearbyCafes(city.trim());
-      setCafes(results);
+      setCafes(await search());
+      setResultsTitle(title);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Something went wrong.");
     } finally {
       setIsLoading(false);
     }
+  }
+
+  // Search by city (typed, or tapped from recent searches)
+  async function searchCity(cityName: string) {
+    const name = cityName.trim();
+    if (name === "") return;
+    setCity(name);
+    await runSearch(`Cafés in ${name}`, () => fetchNearbyCafes(name));
+    setRecentSearches(await addRecentSearch(name));
+  }
+
+  // 📍 Near me: ask for location permission, get the phone's position, search there
+  async function searchNearMe() {
+    const permission = await Location.requestForegroundPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        "Location needed",
+        "To find cafés near you, allow location access for this app in your phone's Settings. You can still search by city."
+      );
+      return;
+    }
+    setCity("");
+    await runSearch("Cafés near you", async () => {
+      // A recent known position is instant; otherwise ask for a fresh one
+      const position =
+        (await Location.getLastKnownPositionAsync({ maxAge: 5 * 60 * 1000 })) ??
+        (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
+      return fetchCafesNearPoint(position.coords.latitude, position.coords.longitude);
+    });
+  }
+
+  async function handleClearRecent() {
+    await clearRecentSearches();
+    setRecentSearches([]);
   }
 
   // Back to the Discover home
@@ -107,14 +157,33 @@ export default function DiscoverScreen() {
       >
         <ArtBanner />
         <View style={styles.searchArea}>
-          <SearchBar value={city} onChangeText={setCity} onSubmit={handleSearch} />
+          <SearchBar value={city} onChangeText={setCity} onSubmit={() => searchCity(city)} />
+
+          {/* Quick options under the search bar */}
+          <View style={styles.quickRow}>
+            <Pressable style={styles.nearMeButton} onPress={searchNearMe} disabled={isLoading}>
+              <Ionicons name="navigate" size={15} color="white" />
+              <Text style={styles.nearMeText}>Near me</Text>
+            </Pressable>
+            {recentSearches.map((recent) => (
+              <Pressable key={recent} style={styles.recentChip} onPress={() => searchCity(recent)}>
+                <Ionicons name="time-outline" size={13} color={COLORS.plum} />
+                <Text style={styles.recentText}>{recent}</Text>
+              </Pressable>
+            ))}
+            {recentSearches.length > 0 && (
+              <Pressable onPress={handleClearRecent} hitSlop={8}>
+                <Text style={styles.clearText}>Clear</Text>
+              </Pressable>
+            )}
+          </View>
+
           {status}
         </View>
 
         <ForYou recommendations={recommendations} />
         <FriendsCafes cafes={friendCafes} />
 
-        {/* "Near me" and recent searches arrive in the next step */}
       </ScrollView>
     );
   }
@@ -131,9 +200,10 @@ export default function DiscoverScreen() {
           <Ionicons name="chevron-back" size={22} color={COLORS.plum} />
         </Pressable>
         <View style={styles.flexOne}>
-          <SearchBar value={city} onChangeText={setCity} onSubmit={handleSearch} />
+          <SearchBar value={city} onChangeText={setCity} onSubmit={() => searchCity(city)} />
         </View>
       </View>
+      <Text style={styles.resultsTitle}>{resultsTitle}</Text>
       <View style={styles.statusArea}>{status}</View>
 
       <FlatList
@@ -143,7 +213,7 @@ export default function DiscoverScreen() {
         columnWrapperStyle={styles.gridRow}
         contentContainerStyle={styles.list}
         keyboardDismissMode="on-drag" // scrolling puts the keyboard away
-        ListEmptyComponent={<Text style={styles.emptyText}>No cafés found. Try another city.</Text>}
+        ListEmptyComponent={<Text style={styles.emptyText}>No cafés found here. Try another search.</Text>}
         renderItem={({ item }) => (
           <CafeCard
             cafe={item}
@@ -175,7 +245,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: 8,
   },
+  quickRow: {
+    flexDirection: "row",
+    flexWrap: "wrap", // chips flow onto the next line when needed
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 12,
+  },
+  nearMeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    height: 32,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    backgroundColor: COLORS.plum,
+  },
+  nearMeText: {
+    color: "white",
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  recentChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    height: 32,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: COLORS.cream,
+  },
+  recentText: {
+    color: COLORS.plum,
+    fontSize: 13,
+  },
+  clearText: {
+    color: COLORS.plum,
+    fontSize: 12,
+    textDecorationLine: "underline",
+  },
   // Results
+  resultsTitle: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.plum,
+  },
   background: {
     flex: 1,
   },
