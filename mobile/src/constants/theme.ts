@@ -11,6 +11,7 @@ export const COLORS = {
   cream: "rgba(255, 255, 255, 0.85)", // floating pills (nav pill, search bar)
   card: "#fdf3e7", // café cards (from result.css)
   heart: "#E0445E", // a liked ❤️
+  latte: "#CBA781", // the background colour of the "Spill The City" illustration
 };
 
 // Shared look for floating pills, so the nav pill and search bar match

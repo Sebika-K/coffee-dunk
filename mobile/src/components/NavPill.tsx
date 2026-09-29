@@ -32,7 +32,7 @@ export function NavPill() {
       />
       <PillIcon
         icon="search"
-        label="Search"
+        label="Discover"
         isActive={pathname.startsWith("/search")}
         onPress={() => router.navigate("/search")}
       />

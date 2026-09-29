@@ -1,8 +1,13 @@
-import { COLORS } from "@/constants/theme";
+// Discover (Phase 8): find cafés. Before searching it's a "home" with the
+// illustration as a compact banner and (from the next steps) suggestions;
+// after searching it shows the café results.
+
+import { ArtBanner } from "@/components/ArtBanner";
 import { CafeCard } from "@/components/CafeCard";
 import { SearchBar } from "@/components/SearchBar";
-import { useKeyboardOpen } from "@/hooks/useKeyboardOpen";
+import { COLORS } from "@/constants/theme";
 import { Cafe, fetchNearbyCafes } from "@/lib/api";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -10,15 +15,16 @@ import {
   FlatList,
   ImageBackground,
   Keyboard,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function SearchScreen() {
+export default function DiscoverScreen() {
   const insets = useSafeAreaInsets();
-  const keyboardOpen = useKeyboardOpen();
 
   const [city, setCity] = useState("");
   const [cafes, setCafes] = useState<Cafe[] | null>(null); // null = haven't searched yet
@@ -41,80 +47,120 @@ export default function SearchScreen() {
     }
   }
 
-  const hasSearched = cafes !== null;
+  // Back to the Discover home
+  function clearSearch() {
+    setCafes(null);
+    setErrorMessage("");
+  }
 
+  const status = (
+    <>
+      {isLoading && <ActivityIndicator color={COLORS.plum} style={styles.spinner} />}
+      {errorMessage !== "" && <Text style={styles.errorText}>{errorMessage}</Text>}
+    </>
+  );
+
+  // ---------- Discover home (before searching) ----------
+  if (cafes === null) {
+    return (
+      <ScrollView
+        style={styles.home}
+        contentContainerStyle={[styles.homeContent, { paddingTop: insets.top + 8 }]}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets // keeps the search bar above the keyboard
+      >
+        <ArtBanner />
+        <View style={styles.searchArea}>
+          <SearchBar value={city} onChangeText={setCity} onSubmit={handleSearch} />
+          {status}
+        </View>
+
+        {/* "For you", "Where your friends went" and "near me" arrive in the next steps */}
+      </ScrollView>
+    );
+  }
+
+  // ---------- Search results ----------
   return (
     <ImageBackground
-      // Illustration before searching; the plain background (like the web
-      // results page) once there are cards to look at
-      source={
-        hasSearched
-          ? require("@/assets/images/background_screen.png")
-          : require("@/assets/images/search_screen.png")
-      }
+      source={require("@/assets/images/background_screen.png")}
       style={styles.background}
       resizeMode="cover"
     >
-      {/* Before searching: bar sits below the illustration.
-          After searching: bar moves to the top, results below. */}
-      <View
-        style={
-          hasSearched
-            ? [styles.topArea, { paddingTop: insets.top + 12 }]
-            : [styles.belowArt, keyboardOpen && styles.aboveKeyboard]
-        }
-      >
-        <SearchBar value={city} onChangeText={setCity} onSubmit={handleSearch} />
-        {isLoading && <ActivityIndicator color={COLORS.plum} style={styles.spinner} />}
-        {errorMessage !== "" && <Text style={styles.errorText}>{errorMessage}</Text>}
+      <View style={[styles.topArea, { paddingTop: insets.top + 12 }]}>
+        <Pressable onPress={clearSearch} style={styles.backButton} accessibilityLabel="Back to Discover">
+          <Ionicons name="chevron-back" size={22} color={COLORS.plum} />
+        </Pressable>
+        <View style={styles.flexOne}>
+          <SearchBar value={city} onChangeText={setCity} onSubmit={handleSearch} />
+        </View>
       </View>
+      <View style={styles.statusArea}>{status}</View>
 
-      {hasSearched && (
-        <FlatList
-          data={cafes}
-          keyExtractor={(cafe) => cafe.place_id}
-          numColumns={2} // a two-column grid, like the web gallery
-          columnWrapperStyle={styles.gridRow}
-          contentContainerStyle={styles.list}
-          keyboardDismissMode="on-drag" // scrolling puts the keyboard away
-          ListEmptyComponent={<Text style={styles.emptyText}>No cafés found. Try another city.</Text>}
-          renderItem={({ item }) => (
-            <CafeCard
-              cafe={item}
-              onPress={() =>
-                // Open this café's page, passing its id (in the address) and name
-                router.push({
-                  pathname: "/search/cafe/[placeId]",
-                  params: { placeId: item.place_id, name: item.name },
-                })
-              }
-            />
-          )}
-        />
-      )}
+      <FlatList
+        data={cafes}
+        keyExtractor={(cafe) => cafe.place_id}
+        numColumns={2} // a two-column grid, like the web gallery
+        columnWrapperStyle={styles.gridRow}
+        contentContainerStyle={styles.list}
+        keyboardDismissMode="on-drag" // scrolling puts the keyboard away
+        ListEmptyComponent={<Text style={styles.emptyText}>No cafés found. Try another city.</Text>}
+        renderItem={({ item }) => (
+          <CafeCard
+            cafe={item}
+            onPress={() =>
+              // Open this café's page, passing its id (in the address) and name
+              router.push({
+                pathname: "/search/cafe/[placeId]",
+                params: { placeId: item.place_id, name: item.name },
+              })
+            }
+          />
+        )}
+      />
     </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  // Discover home
+  home: {
+    flex: 1,
+    backgroundColor: COLORS.latte, // matches the illustration, so the banner blends in
+  },
+  homeContent: {
+    paddingBottom: 120, // room for the nav pill
+  },
+  searchArea: {
+    alignItems: "center",
+    paddingHorizontal: 20,
+    marginTop: 8,
+  },
+  // Results
   background: {
     flex: 1,
   },
-  belowArt: {
-    position: "absolute",
-    top: "67%", // just under the girl's feet in the illustration
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    paddingHorizontal: 24,
-  },
-  aboveKeyboard: {
-    top: "38%", // slide up while typing so the keyboard doesn't cover it
-  },
   topArea: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.cream,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  flexOne: {
+    flex: 1,
+  },
+  statusArea: {
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingBottom: 8,
   },
   spinner: {
     marginTop: 12,
