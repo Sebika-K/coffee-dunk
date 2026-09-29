@@ -27,6 +27,7 @@ import {
   Timestamp,
   updateDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
@@ -195,14 +196,27 @@ export async function fetchUserBio(userId: string): Promise<string> {
   return snap.exists() ? snap.data().bio ?? "" : "";
 }
 
-// Delete one of YOUR posts: the database entry first, then the photo file.
+// Delete one of YOUR posts: the post AND its likes, then the photo file.
 export async function deletePost(post: Post) {
-  // 1) Remove the post from Firestore - after this, it's gone from every screen
-  await deleteDoc(doc(db, "uploads", post.id));
+  const postRef = doc(db, "uploads", post.id);
 
-  // 2) Remove the photo file from Storage (a download link works as a reference).
-  //    If this part fails, the post is still deleted - we just log it,
-  //    like the web app did, rather than showing the user an error.
+  // 1) Find the post's likes. Firestore does NOT delete a document's
+  //    subcollections with it - without this they'd be left behind forever.
+  //    (You can read them because it's your post - see the rules.)
+  const likes = await getDocs(collection(db, "uploads", post.id, "likes"));
+
+  // 2) Delete the likes and the post in ONE batch: a batch is "all or nothing",
+  //    so we never end up with the post gone but its likes still there
+  //    (or the other way round). One batch holds up to 500 deletes - far more
+  //    likes than a friends-only post will get.
+  const batch = writeBatch(db);
+  likes.docs.forEach((like) => batch.delete(like.ref));
+  batch.delete(postRef);
+  await batch.commit(); // after this, the post is gone from every screen
+
+  // 3) Remove the photo file from Storage (a download link works as a reference).
+  //    If this part fails, the post is still deleted - we just log it
+  //    rather than showing the user an error.
   if (post.image_url?.startsWith("http")) {
     try {
       await deleteObject(ref(storage, post.image_url));

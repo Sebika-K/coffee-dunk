@@ -63,8 +63,13 @@ service cloud.firestore {
       allow create: if isMe(userId)
         && request.resource.data.keys().hasOnly(['created_at']);
 
-      // You can unlike (remove your own like)
-      allow delete: if isMe(userId);
+      // You can unlike (remove your own like), and the POSTER can remove
+      // every like when they delete their post (so none are left behind).
+      // In a batch, get() still sees the post as it was BEFORE the batch,
+      // so this works even though the post is deleted in the same batch.
+      allow delete: if isMe(userId)
+        || (signedIn()
+            && get(/databases/$(database)/documents/uploads/$(postId)).data.user_id == request.auth.uid);
     }
 
     // --- Public profiles (username, photo, bio) ----------------------------
