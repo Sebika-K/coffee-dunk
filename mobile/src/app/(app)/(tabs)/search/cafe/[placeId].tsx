@@ -1,4 +1,4 @@
-// One café's page: its name and a grid of everyone's posts there.
+// One café's page: its name, top drinks, and a grid of YOUR + your FRIENDS' posts there.
 // The [placeId] in the file name means this screen works for ANY café -
 // the id comes from the address, e.g. /search/cafe/ChIJOzVa9gSLj4ARFQqljssXWUI
 
@@ -6,7 +6,9 @@ import { PostGrid } from "@/components/PostGrid";
 import { TopDrinks } from "@/components/TopDrinks";
 import { COLORS } from "@/constants/theme";
 import { fetchCafePosts, fetchTopDrinks, Post, TopDrink } from "@/lib/api";
+import { useAuth } from "@/lib/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { User } from "firebase/auth";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import {
@@ -23,6 +25,7 @@ export default function CafeScreen() {
   // Read the café's id and name from the address
   const { placeId, name } = useLocalSearchParams<{ placeId: string; name?: string }>();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [topDrinks, setTopDrinks] = useState<TopDrink[]>([]);
@@ -33,14 +36,15 @@ export default function CafeScreen() {
   // AND when you come back to it (e.g. after posting, so your new post shows up)
   useFocusEffect(
     useCallback(() => {
+      if (!user) return;
       let isActive = true; // becomes false if you leave before the posts arrive
 
-      async function load() {
+      async function load(signedInUser: User) {
         try {
           // Load posts and top drinks at the same time.
           // If top drinks fail, just show none - the posts still matter most.
           const [postsResult, drinksResult] = await Promise.all([
-            fetchCafePosts(placeId),
+            fetchCafePosts(placeId, signedInUser),
             fetchTopDrinks(placeId).catch(() => []),
           ]);
           if (isActive) {
@@ -56,11 +60,11 @@ export default function CafeScreen() {
         }
       }
 
-      load();
+      load(user);
       return () => {
         isActive = false; // clean-up: ignore late answers for a screen that's gone
       };
-    }, [placeId])
+    }, [placeId, user])
   );
 
   return (
@@ -88,7 +92,7 @@ export default function CafeScreen() {
           onPressPost={(post) =>
             router.push({ pathname: "/post/[postId]", params: { postId: post.id } })
           }
-          emptyText="No posts here yet. Be the first!"
+          emptyText="No posts from you or your friends here yet. Be the first!"
           header={<TopDrinks drinks={topDrinks} />}
         />
       )}

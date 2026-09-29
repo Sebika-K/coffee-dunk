@@ -86,13 +86,16 @@ export type Post = {
   recipe: Recipe | null; // only for "home" posts
 };
 
-// Ask the backend for all posts at one café (newest first)
-export async function fetchCafePosts(placeId: string): Promise<Post[]> {
+// Ask the backend for the posts at one café (newest first).
+// Friends only: the backend needs to know who's asking, so we send the login
+// token (like fetchRecommendations) and get back only my + my friends' posts.
+export async function fetchCafePosts(placeId: string, user: User): Promise<Post[]> {
   const url = `${API_URL}/api/cafes/${encodeURIComponent(placeId)}/posts`;
+  const token = await user.getIdToken();
 
   let response: Response;
   try {
-    response = await fetch(url);
+    response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   } catch {
     throw new Error("Can't reach the Coffee Dunk server. Is the backend running?");
   }

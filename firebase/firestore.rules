@@ -17,15 +17,36 @@ service cloud.firestore {
     function isMe(userId) {
       return signedIn() && request.auth.uid == userId;
     }
+    // Am I ACCEPTED friends with this person? Looks up our one friendship
+    // document - its id is our two ids sorted and joined, like pairId() in the app.
+    function isFriendOf(otherId) {
+      let me = request.auth.uid;
+      let pair = me < otherId ? me + '_' + otherId : otherId + '_' + me;
+      let path = /databases/$(database)/documents/friendships/$(pair);
+      return exists(path) && get(path).data.status == 'accepted';
+    }
 
     // --- Posts -------------------------------------------------------------
     match /uploads/{postId} {
-      // Any logged-in user can see posts
-      allow read: if signedIn();
+      // FRIENDS ONLY: you can see your own posts and your friends' posts.
+      allow read: if signedIn()
+        && (isMe(resource.data.user_id) || isFriendOf(resource.data.user_id));
+
       // You can only create posts as YOURSELF
       allow create: if signedIn() && request.resource.data.user_id == request.auth.uid;
-      // Only the owner can edit or delete a post
-      allow update, delete: if isMe(resource.data.user_id);
+
+      // Only the owner can edit, and only the DETAILS - never the owner,
+      // the photo or the original date. (user / user_avatar are allowed so
+      // your name and photo can be refreshed on old posts after you change them.)
+      allow update: if isMe(resource.data.user_id)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+             'caption', 'rating', 'place_id', 'cafe_name',
+             'drink', 'drink_custom', 'milk', 'temperature', 'notes',
+             'source', 'recipe', 'edited_at', 'user', 'user_avatar'
+           ]);
+
+      // Only the owner can delete
+      allow delete: if isMe(resource.data.user_id);
     }
 
     // --- Likes on a post (Phase 7.5) ---------------------------------------

@@ -155,9 +155,11 @@ export function docToPost(docSnap: DocumentSnapshot): Post {
 // The friends feed: newest posts from me + my friends.
 //
 // "Fan-out on read": we build the feed when it's opened, by asking for posts
-// whose author is in my list. Firestore's "in" allows up to 30 values per query,
-// so bigger lists are split into groups of 30 and the results merged.
-const MAX_IN = 30;
+// whose author is in my list, split into groups and the results merged.
+//
+// We use groups of 10, not 30: the database rules check "are we friends?" for
+// each author, and Firestore allows at most 10 of those look-ups per query.
+const MAX_IN = 10;
 
 export async function fetchFeed(authorIds: string[], maxPosts = 30): Promise<Post[]> {
   // Split the authors into groups of 30

@@ -4,6 +4,7 @@ from urllib.parse import quote
 from flask import Blueprint, render_template, request, jsonify, Response
 from .firebase_helpers import get_posts_by_place_id, get_posts_by_user, get_posts_by_drink, get_friend_ids
 from .parsing import parse_coordinates, parse_radius
+from .privacy import visible_posts
 from .drink_stats import top_drinks, favourite_drink, recommend_cafes
 from dotenv import load_dotenv
 from firebase_admin import auth as admin_auth
@@ -278,10 +279,17 @@ def cafe_detail(place_id):
 @cafe_bp.route("/api/cafes/<place_id>/posts")
 def api_cafe_posts(place_id):
     """
-    Mobile app version: all posts for one café as JSON, newest first.
+    Mobile app version: posts at one café as JSON, newest first.
+    FRIENDS ONLY: needs a login, and returns just your own posts and your
+    friends' posts. (Top drinks below still count everyone - anonymously.)
     Example: /api/cafes/ChIJOzVa9gSLj4ARFQqljssXWUI/posts
     """
-    posts = get_cafe_posts(place_id)
+    user_id, problem = get_logged_in_user_id()
+    if problem:
+        message, status = problem
+        return jsonify({"error": message}), status
+
+    posts = visible_posts(get_cafe_posts(place_id), user_id, get_friend_ids(user_id))
 
     for p in posts:
         # Dates aren't JSON-friendly, so send them as standard text
