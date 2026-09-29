@@ -36,7 +36,7 @@ export default function PostScreen() {
   const [isLiked, setIsLiked] = useState(false); // did I like this friend's post?
   const [likers, setLikers] = useState<PublicProfile[]>([]); // who liked MY post
 
-  // Is this post in my "Want to try"?
+  // Have I saved this post?
   useEffect(() => {
     if (!user) return;
     isPostSaved(user.uid, postId)

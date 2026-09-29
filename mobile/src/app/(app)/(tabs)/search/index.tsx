@@ -3,13 +3,15 @@
 // after searching it shows the café results.
 
 import { ArtBanner } from "@/components/ArtBanner";
+import { ForYou } from "@/components/ForYou";
 import { CafeCard } from "@/components/CafeCard";
 import { SearchBar } from "@/components/SearchBar";
 import { COLORS } from "@/constants/theme";
-import { Cafe, fetchNearbyCafes } from "@/lib/api";
+import { Cafe, fetchNearbyCafes, fetchRecommendations, Recommendations } from "@/lib/api";
+import { useAuth } from "@/lib/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -25,11 +27,30 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function DiscoverScreen() {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
 
   const [city, setCity] = useState("");
   const [cafes, setCafes] = useState<Cafe[] | null>(null); // null = haven't searched yet
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [recommendations, setRecommendations] = useState<Recommendations | null>(null);
+
+  // Load "For you" whenever Discover comes into view. It's a bonus:
+  // if the backend is off or it fails, the section just doesn't show.
+  useFocusEffect(
+    useCallback(() => {
+      if (!user) return;
+      let isActive = true;
+      fetchRecommendations(user)
+        .then((result) => {
+          if (isActive) setRecommendations(result);
+        })
+        .catch((error) => console.log("Recommendations failed:", error));
+      return () => {
+        isActive = false;
+      };
+    }, [user])
+  );
 
   async function handleSearch() {
     if (city.trim() === "" || isLoading) return;
@@ -75,7 +96,9 @@ export default function DiscoverScreen() {
           {status}
         </View>
 
-        {/* "For you", "Where your friends went" and "near me" arrive in the next steps */}
+        <ForYou recommendations={recommendations} />
+
+        {/* "Where your friends went" and "near me" arrive in the next steps */}
       </ScrollView>
     );
   }

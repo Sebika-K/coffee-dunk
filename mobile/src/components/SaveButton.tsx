@@ -1,4 +1,4 @@
-// The 🔖 "Want to try" button. Filled when saved, outline when not.
+// The 🔖 Save button. Filled when saved, outline when not.
 
 import { COLORS } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,7 +16,7 @@ export function SaveButton({ isSaved, onToggle, size = 22 }: Props) {
       onPress={onToggle}
       hitSlop={8}
       accessibilityRole="button"
-      accessibilityLabel={isSaved ? "Remove from Want to try" : "Save to Want to try"}
+      accessibilityLabel={isSaved ? "Remove from Saved" : "Save"}
     >
       <Ionicons name={isSaved ? "bookmark" : "bookmark-outline"} size={size} color={COLORS.plum} />
     </Pressable>

@@ -1,12 +1,11 @@
 // Your profile: photo, name, stats, bio and all your posts.
 // Rebuilt from the web app's profile.html / profile.css.
 
-import { CafesToTry } from "@/components/CafesToTry";
 import { ChoiceChips } from "@/components/Chips";
 import { DiaryCard } from "@/components/DiaryCard";
 import { PostGrid } from "@/components/PostGrid";
 import { COLORS } from "@/constants/theme";
-import { fetchRecommendations, Post, Recommendations } from "@/lib/api";
+import { Post } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { fetchMyFriends } from "@/lib/friends";
 import { fetchUserBio, fetchUserPosts } from "@/lib/posts";
@@ -26,7 +25,6 @@ export default function ProfileScreen() {
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [bio, setBio] = useState("");
-  const [recommendations, setRecommendations] = useState<Recommendations | null>(null);
   const [requestCount, setRequestCount] = useState(0); // friend requests waiting for me
   const [savedPosts, setSavedPosts] = useState<Post[]>([]);
   const [view, setView] = useState<"mine" | "saved">("mine"); // which grid to show
@@ -42,22 +40,17 @@ export default function ProfileScreen() {
       async function load(signedInUser: User) {
         const userId = signedInUser.uid;
         try {
-          // Load everything at the SAME time. Recommendations are a bonus:
-          // if the backend is off or fails, the profile still works (null = hide the card).
-          const [myPosts, myBio, myRecommendations, myFriends, mySaved] = await Promise.all([
+          // Load everything at the SAME time. The extras (friends badge, saved)
+          // can fail on their own without breaking the profile.
+          const [myPosts, myBio, myFriends, mySaved] = await Promise.all([
             fetchUserPosts(userId),
             fetchUserBio(userId),
-            fetchRecommendations(signedInUser).catch((error) => {
-              console.log("Recommendations failed:", error);
-              return null;
-            }),
             fetchMyFriends(userId).catch(() => null), // only for the request badge
-            fetchSavedPosts(userId).catch(() => []), // "Want to try"
+            fetchSavedPosts(userId).catch(() => []), // your saved posts
           ]);
           if (isActive) {
             setPosts(myPosts);
             setBio(myBio);
-            setRecommendations(myRecommendations);
             setRequestCount(myFriends?.incoming.length ?? 0);
             setSavedPosts(mySaved);
             setErrorMessage("");
@@ -128,14 +121,13 @@ export default function ProfileScreen() {
 
       {bio !== "" && <Text style={styles.bio}>{bio}</Text>}
       {!isLoading && posts.length > 0 && <DiaryCard stats={stats} />}
-      {!isLoading && <CafesToTry recommendations={recommendations} />}
 
       {/* Switch the grid below between my posts and my saved ones */}
       <View style={styles.viewSwitch}>
         <ChoiceChips
           options={[
             { id: "mine", label: `My coffee (${posts.length})` },
-            { id: "saved", label: `🔖 Want to try (${savedPosts.length})` },
+            { id: "saved", label: `🔖 Saved (${savedPosts.length})` },
           ]}
           selected={view}
           onChange={(value) => value && setView(value)}
@@ -163,7 +155,7 @@ export default function ProfileScreen() {
             ? ""
             : view === "mine"
             ? "No posts yet. Tap + to share your first coffee!"
-            : "Nothing saved yet. Tap 🔖 on a friend's post to save it here."
+            : "Nothing saved yet. Tap 🔖 on a friend's coffee you want to try."
         }
       />
 

@@ -1,4 +1,4 @@
-// "Want to try": posts you've saved from friends (Phase 7.4).
+// Saved 🔖: friends' posts you want to try (Phase 7.4).
 //
 // DATA DESIGN - a private list INSIDE each user's profile document:
 //   users/<myId>/saved/<postId>   { saved_at: time }
