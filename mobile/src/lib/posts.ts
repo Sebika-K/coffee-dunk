@@ -25,17 +25,17 @@ import {
   query,
   serverTimestamp,
   Timestamp,
+  updateDoc,
   where,
 } from "firebase/firestore";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
-type NewPost = {
-  photoUri: string; // the photo's location on the phone (file:///...)
+// Everything about a post you can choose on the upload screen (and change later)
+export type PostDetails = {
   placeId: string | null; // null for homemade coffee
   cafeName: string | null;
   caption: string;
   rating: number;
-  user: User;
   // Journal fields (Phase 3)
   drink: DrinkId;
   drinkCustom: string; // only used when drink is "other"
@@ -47,21 +47,34 @@ type NewPost = {
   recipe: Recipe | null;
 };
 
-export async function createPost({
-  photoUri,
-  placeId,
-  cafeName,
-  caption,
-  rating,
-  user,
-  drink,
-  drinkCustom,
-  milk,
-  temperature,
-  notes,
-  source,
-  recipe,
-}: NewPost) {
+// A NEW post also needs the photo and who's posting
+type NewPost = PostDetails & {
+  photoUri: string; // the photo's location on the phone (file:///...)
+  user: User;
+};
+
+// PostDetails -> the database's field names. Used by BOTH create and update,
+// so a new post and an edited post are always saved in exactly the same shape.
+function detailsToFields(details: PostDetails) {
+  const isHome = details.source === "home";
+  return {
+    caption: details.caption,
+    rating: details.rating,
+    place_id: isHome ? null : details.placeId,
+    cafe_name: isHome ? null : details.cafeName,
+    // Journal fields: saved as ids (e.g. "latte"), never display text
+    drink: details.drink,
+    drink_custom: details.drink === "other" ? details.drinkCustom : null,
+    milk: details.milk,
+    temperature: details.temperature,
+    notes: details.notes,
+    // Where it came from; homemade posts carry their recipe
+    source: details.source,
+    recipe: isHome ? details.recipe : null,
+  };
+}
+
+export async function createPost({ photoUri, user, ...details }: NewPost) {
   // 1) Read the photo from the phone as a "blob" (raw file data)
   const photoResponse = await fetch(photoUri);
   const photoBlob = await photoResponse.blob();
@@ -75,24 +88,22 @@ export async function createPost({
 
   // 4) Save the post in the "uploads" collection - where the backend reads from
   await addDoc(collection(db, "uploads"), {
+    ...detailsToFields(details), // what, where, rating... (shared with updatePost)
     image_url: imageUrl,
-    caption: caption,
-    rating: rating,
-    place_id: placeId,
-    cafe_name: cafeName,
     user_id: user.uid,
     user: user.displayName || user.email?.split("@")[0] || "anon",
     user_avatar: user.photoURL ?? null, // null, NOT a website path (see step 2.6b)
     created_at: serverTimestamp(), // Firebase fills in the exact time
-    // Journal fields: saved as ids (e.g. "latte"), never display text
-    drink: drink,
-    drink_custom: drink === "other" ? drinkCustom : null,
-    milk: milk,
-    temperature: temperature,
-    notes: notes,
-    // Where it came from; homemade posts carry their recipe
-    source: source,
-    recipe: source === "home" ? recipe : null,
+  });
+}
+
+// Edit one of YOUR posts. Only the details change - the photo, the owner and
+// the original date stay as they were. "updateDoc" only touches the fields we
+// pass in, so everything else on the post is left alone.
+export async function updatePost(postId: string, details: PostDetails) {
+  await updateDoc(doc(db, "uploads", postId), {
+    ...detailsToFields(details),
+    edited_at: serverTimestamp(), // handy later, e.g. an "edited" label
   });
 }
 

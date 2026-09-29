@@ -19,8 +19,8 @@ import { deletePost, fetchPost } from "@/lib/posts";
 import { isPostSaved, savePost, unsavePost } from "@/lib/saved";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -58,26 +58,29 @@ export default function PostScreen() {
     }
   }
 
-  // Load this one post when the page opens
-  useEffect(() => {
-    let isActive = true;
-    fetchPost(postId)
-      .then((result) => {
-        if (!isActive) return;
-        if (result) setPost(result);
-        else setErrorMessage("This post doesn't exist anymore.");
-      })
-      .catch((error) => {
-        console.log("Post load failed:", error);
-        if (isActive) setErrorMessage("Couldn't load this post.");
-      })
-      .finally(() => {
-        if (isActive) setIsLoading(false);
-      });
-    return () => {
-      isActive = false;
-    };
-  }, [postId]);
+  // Load this one post when the page comes into view - also after editing it,
+  // so the changes show straight away
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      fetchPost(postId)
+        .then((result) => {
+          if (!isActive) return;
+          if (result) setPost(result);
+          else setErrorMessage("This post doesn't exist anymore.");
+        })
+        .catch((error) => {
+          console.log("Post load failed:", error);
+          if (isActive) setErrorMessage("Couldn't load this post.");
+        })
+        .finally(() => {
+          if (isActive) setIsLoading(false);
+        });
+      return () => {
+        isActive = false;
+      };
+    }, [postId])
+  );
 
   const isMine = post !== null && user !== null && post.user_id === user.uid;
 
@@ -140,18 +143,29 @@ export default function PostScreen() {
           <Ionicons name="chevron-back" size={24} color={COLORS.plum} />
         </Pressable>
         {isMine && (
-          <Pressable
-            onPress={confirmDelete}
-            disabled={isDeleting}
-            style={styles.iconButton}
-            accessibilityLabel="Delete post"
-          >
-            {isDeleting ? (
-              <ActivityIndicator color={COLORS.plum} />
-            ) : (
-              <Ionicons name="trash-outline" size={22} color={COLORS.plum} />
-            )}
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable
+              onPress={() =>
+                router.push({ pathname: "/upload", params: { editPostId: post.id } })
+              }
+              style={styles.iconButton}
+              accessibilityLabel="Edit post"
+            >
+              <Ionicons name="create-outline" size={23} color={COLORS.plum} />
+            </Pressable>
+            <Pressable
+              onPress={confirmDelete}
+              disabled={isDeleting}
+              style={styles.iconButton}
+              accessibilityLabel="Delete post"
+            >
+              {isDeleting ? (
+                <ActivityIndicator color={COLORS.plum} />
+              ) : (
+                <Ionicons name="trash-outline" size={22} color={COLORS.plum} />
+              )}
+            </Pressable>
+          </View>
         )}
       </View>
 
@@ -243,6 +257,10 @@ export default function PostScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerActions: {
+    flexDirection: "row",
+    gap: 4,
+  },
   screen: {
     flex: 1,
     backgroundColor: COLORS.card,

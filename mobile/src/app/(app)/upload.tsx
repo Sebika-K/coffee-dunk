@@ -1,6 +1,8 @@
 // New post screen: photo, café, caption and rating -> posted to Firebase.
 // Quick by default: photo, where, drink, rating (+ optional caption).
 // Milk, hot/iced, tasting notes and the recipe live under "+ Add details".
+// The SAME screen edits a post: open it with ?editPostId=... and the form
+// starts filled in. The photo can't be changed when editing (like Instagram).
 
 import { CafePicker, ChosenCafe } from "@/components/CafePicker";
 import { ChoiceChips, MultiChoiceChips } from "@/components/Chips";
@@ -21,12 +23,12 @@ import {
 } from "@/constants/drinks";
 import { COLORS } from "@/constants/theme";
 import { useAuth } from "@/lib/AuthContext";
-import { createPost } from "@/lib/posts";
+import { createPost, fetchPost, PostDetails, updatePost } from "@/lib/posts";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -40,7 +42,13 @@ const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
 
 export default function UploadScreen() {
   // When opened from a café page, we already know which café
-  const { placeId, name } = useLocalSearchParams<{ placeId?: string; name?: string }>();
+  // When editing, we get the post's id instead
+  const { placeId, name, editPostId } = useLocalSearchParams<{
+    placeId?: string;
+    name?: string;
+    editPostId?: string;
+  }>();
+  const isEditing = editPostId !== undefined;
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
@@ -52,6 +60,9 @@ export default function UploadScreen() {
   const [caption, setCaption] = useState("");
   const [rating, setRating] = useState(0); // 0 = not rated yet
   const [isPosting, setIsPosting] = useState(false);
+  // Edit mode: the photo that's already online, and "still loading the post"
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
+  const [isLoadingPost, setIsLoadingPost] = useState(isEditing);
 
   // Journal fields (Phase 3)
   const [drink, setDrink] = useState<DrinkId | null>(null);
@@ -84,51 +95,104 @@ export default function UploadScreen() {
     (notes.length > 0 ? 1 : 0) +
     (isHome && recipeFilled ? 1 : 0);
 
+  // Edit mode: load the post once and fill in the form with what it says now
+  useEffect(() => {
+    if (!editPostId) return;
+    fetchPost(editPostId)
+      .then((post) => {
+        if (!post) {
+          Alert.alert("Post not found", "It may have been deleted.");
+          router.back();
+          return;
+        }
+        setExistingPhotoUrl(post.image_url);
+        setSource(post.source);
+        setCafe(post.place_id && post.cafe_name ? { placeId: post.place_id, name: post.cafe_name } : null);
+        setCaption(post.caption ?? "");
+        setRating(post.rating ?? 0);
+        // Saved as plain text in the database -> tell TypeScript which kind of id it is
+        setDrink(post.drink as DrinkId | null);
+        setDrinkCustom(post.drink_custom ?? "");
+        setMilk(post.milk as MilkId | null);
+        setTemperature(post.temperature as TemperatureId | null);
+        setNotes(post.notes as TastingNoteId[]);
+        const r = post.recipe;
+        if (r) {
+          setMethod(r.method);
+          setBeans(r.beans ?? "");
+          setCoffeeGrams(r.coffee_g?.toString() ?? "");
+          setWaterMl(r.water_ml?.toString() ?? "");
+          setMilkMl(r.milk_ml?.toString() ?? "");
+          setSweetener(r.sweetener ?? "");
+          setSteps(r.steps ?? "");
+        }
+        // Open the details section if the post has any, so you can see them
+        if (post.milk || post.temperature || post.notes.length > 0 || r) setShowDetails(true);
+      })
+      .catch((error) => {
+        console.log("Loading post to edit failed:", error);
+        Alert.alert("Couldn't load this post", "Please try again.");
+        router.back();
+      })
+      .finally(() => setIsLoadingPost(false));
+  }, [editPostId]);
+
   // A drink is required - and if it's "Other", it needs a typed name
   const hasDrink = drink !== null && (drink !== "other" || drinkCustom.trim() !== "");
 
   // Everything a post needs (caption, milk, hot/iced and notes are optional)
   // At a café -> needs the café. Made at home -> needs the brew method.
   const hasWhere = isHome ? method !== null : cafe !== null;
-  const canPost = photoUri !== null && hasWhere && hasDrink && rating > 0 && !isPosting;
+  // (When editing, the photo is already there)
+  const hasPhoto = isEditing || photoUri !== null;
+  const canPost = hasPhoto && hasWhere && hasDrink && rating > 0 && !isPosting && !isLoadingPost;
 
   async function handlePost() {
     // These checks also tell TypeScript the values can't be null below
-    if (!photoUri || !user || !drink) return;
+    if (!user || !drink) return;
     if (isHome ? !method : !cafe) return;
+
+    // Everything from the form, in one object (same for new and edited posts)
+    const details: PostDetails = {
+      placeId: isHome ? null : cafe?.placeId ?? null,
+      cafeName: isHome ? null : cafe?.name ?? null,
+      caption: caption.trim(),
+      rating,
+      drink,
+      drinkCustom: drinkCustom.trim(),
+      milk,
+      temperature,
+      notes,
+      source,
+      recipe:
+        isHome && method
+          ? {
+              method,
+              beans: beans.trim() || null, // empty text -> null
+              coffee_g: toNumber(coffeeGrams),
+              water_ml: toNumber(waterMl),
+              milk_ml: toNumber(milkMl),
+              sweetener: sweetener.trim() || null,
+              steps: steps.trim() || null,
+            }
+          : null,
+    };
 
     setIsPosting(true);
     try {
-      await createPost({
-        photoUri,
-        placeId: isHome ? null : cafe?.placeId ?? null,
-        cafeName: isHome ? null : cafe?.name ?? null,
-        caption: caption.trim(),
-        rating,
-        user,
-        drink,
-        drinkCustom: drinkCustom.trim(),
-        milk,
-        temperature,
-        notes,
-        source,
-        recipe:
-          isHome && method
-            ? {
-                method,
-                beans: beans.trim() || null, // empty text -> null
-                coffee_g: toNumber(coffeeGrams),
-                water_ml: toNumber(waterMl),
-                milk_ml: toNumber(milkMl),
-                sweetener: sweetener.trim() || null,
-                steps: steps.trim() || null,
-              }
-            : null,
-      });
-      router.back(); // close the upload screen - the café page reloads and shows the new post
+      if (editPostId) {
+        await updatePost(editPostId, details);
+      } else {
+        if (!photoUri) return;
+        await createPost({ photoUri, user, ...details });
+      }
+      router.back(); // close this screen - the screen underneath reloads when it comes back into view
     } catch (error) {
-      console.log("Post failed:", error);
-      Alert.alert("Couldn't post", "Something went wrong uploading your post. Please try again.");
+      console.log(isEditing ? "Edit failed:" : "Post failed:", error);
+      Alert.alert(
+        isEditing ? "Couldn't save" : "Couldn't post",
+        "Something went wrong. Please try again."
+      );
       setIsPosting(false);
     }
   }
@@ -158,7 +222,7 @@ export default function UploadScreen() {
         <Pressable onPress={() => router.back()} style={styles.iconButton} accessibilityLabel="Cancel">
           <Ionicons name="close" size={24} color={COLORS.plum} />
         </Pressable>
-        <Text style={styles.title}>New Post</Text>
+        <Text style={styles.title}>{isEditing ? "Edit Post" : "New Post"}</Text>
         <Pressable
           onPress={handlePost}
           disabled={!canPost}
@@ -167,7 +231,7 @@ export default function UploadScreen() {
           {isPosting ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={styles.postButtonText}>Post</Text>
+            <Text style={styles.postButtonText}>{isEditing ? "Save" : "Post"}</Text>
           )}
         </Pressable>
       </View>
@@ -177,38 +241,50 @@ export default function UploadScreen() {
         keyboardShouldPersistTaps="handled" // taps on café results work even while typing
         automaticallyAdjustKeyboardInsets // scroll so the keyboard doesn't cover the caption
       >
-        {/* The photo area: tap it to pick from the gallery */}
-        <Pressable style={styles.photoStage} onPress={pickFromGallery}>
-          {photoUri ? (
-            <Image source={{ uri: photoUri }} style={styles.photo} contentFit="cover" />
-          ) : (
-            <View style={styles.emptyStage}>
-              <Ionicons name="image-outline" size={48} color={COLORS.placeholder} />
-              <Text style={styles.emptyText}>Add a photo of your coffee</Text>
-            </View>
-          )}
+        {isEditing ? (
+          // Editing: show the photo that's already posted (it can't be changed)
+          <View style={styles.photoStage}>
+            {existingPhotoUrl && (
+              <Image source={{ uri: existingPhotoUrl }} style={styles.photo} contentFit="cover" />
+            )}
+            {isLoadingPost && <ActivityIndicator color={COLORS.plum} style={styles.photoSpinner} />}
+          </View>
+        ) : (
+          <>
+            {/* The photo area: tap it to pick from the gallery */}
+            <Pressable style={styles.photoStage} onPress={pickFromGallery}>
+              {photoUri ? (
+                <Image source={{ uri: photoUri }} style={styles.photo} contentFit="cover" />
+              ) : (
+                <View style={styles.emptyStage}>
+                  <Ionicons name="image-outline" size={48} color={COLORS.placeholder} />
+                  <Text style={styles.emptyText}>Add a photo of your coffee</Text>
+                </View>
+              )}
 
-          {photoUri && (
-            <Pressable
-              onPress={() => setPhotoUri(null)}
-              style={styles.removeButton}
-              accessibilityLabel="Remove photo"
-            >
-              <Ionicons name="trash-outline" size={20} color="white" />
+              {photoUri && (
+                <Pressable
+                  onPress={() => setPhotoUri(null)}
+                  style={styles.removeButton}
+                  accessibilityLabel="Remove photo"
+                >
+                  <Ionicons name="trash-outline" size={20} color="white" />
+                </Pressable>
+              )}
             </Pressable>
-          )}
-        </Pressable>
 
-        <View style={styles.pickerRow}>
-          <Pressable style={styles.pickerButton} onPress={takePhoto}>
-            <Ionicons name="camera-outline" size={22} color={COLORS.plum} />
-            <Text style={styles.pickerText}>Camera</Text>
-          </Pressable>
-          <Pressable style={styles.pickerButton} onPress={pickFromGallery}>
-            <Ionicons name="images-outline" size={22} color={COLORS.plum} />
-            <Text style={styles.pickerText}>Gallery</Text>
-          </Pressable>
-        </View>
+            <View style={styles.pickerRow}>
+              <Pressable style={styles.pickerButton} onPress={takePhoto}>
+                <Ionicons name="camera-outline" size={22} color={COLORS.plum} />
+                <Text style={styles.pickerText}>Camera</Text>
+              </Pressable>
+              <Pressable style={styles.pickerButton} onPress={pickFromGallery}>
+                <Ionicons name="images-outline" size={22} color={COLORS.plum} />
+                <Text style={styles.pickerText}>Gallery</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
 
         {/* ---- QUICK PART: the few things every post needs ---- */}
         <Text style={styles.label}>Where's it from?</Text>
@@ -507,6 +583,11 @@ const styles = StyleSheet.create({
   photo: {
     width: "100%",
     height: "100%",
+  },
+  photoSpinner: {
+    position: "absolute",
+    top: "50%",
+    alignSelf: "center",
   },
   emptyStage: {
     flex: 1,
