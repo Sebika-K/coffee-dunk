@@ -1,10 +1,10 @@
-// Someone else's profile: their photo, stats, bio, coffee diary and posts.
+// Someone else's profile: their photo, stats, bio and posts.
 // Opened by tapping a name or photo anywhere in the app.
 //
 // PRIVACY (friends-only): you only see their posts once you're friends.
 // Until then you see who they are + a button to add them.
+// Their coffee diary is PRIVATE - it only ever shows on your own Profile tab.
 
-import { DiaryCard } from "@/components/DiaryCard";
 import { PostGrid } from "@/components/PostGrid";
 import { ProfileSummary } from "@/components/ProfileSummary";
 import { COLORS } from "@/constants/theme";
@@ -139,10 +139,6 @@ export default function UserProfileScreen() {
           />
 
           <FriendButton state={friendState} busy={isBusy} onPress={handleFriendButton} />
-
-          {isFriend && posts.length > 0 && (
-            <DiaryCard stats={stats} title={`${name}'s coffee diary`} />
-          )}
 
           {/* Not friends yet: a friendly locked message instead of their posts */}
           {!isFriend && (

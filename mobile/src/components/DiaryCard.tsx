@@ -1,5 +1,6 @@
-// "Your coffee diary" card on the profile: most ordered drink,
+// "Your coffee diary" card on YOUR profile: most ordered drink,
 // highest rated drink and favourite tasting note.
+// Private: it's never shown on a friend's profile page.
 
 import { tastingNoteLabel } from "@/constants/drinks";
 import { COLORS } from "@/constants/theme";
@@ -10,17 +11,16 @@ import { StyleSheet, Text, View } from "react-native";
 
 type Props = {
   stats: DiaryStats;
-  title?: string; // e.g. "Sam's coffee diary" on a friend's profile
 };
 
-export function DiaryCard({ stats, title = "Your coffee diary" }: Props) {
+export function DiaryCard({ stats }: Props) {
   const { mostOrdered, highestRated, favouriteNote } = stats;
 
   // No journal posts yet (only old posts, or none) -> a friendly nudge instead
   if (!mostOrdered && !highestRated && !favouriteNote) {
     return (
       <View style={styles.card}>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.title}>Your coffee diary</Text>
         <Text style={styles.empty}>
           Add what you drank when you post, and your coffee stats will appear here ☕
         </Text>
@@ -30,7 +30,7 @@ export function DiaryCard({ stats, title = "Your coffee diary" }: Props) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.title}>Your coffee diary</Text>
 
       {mostOrdered && (
         <DiaryRow
