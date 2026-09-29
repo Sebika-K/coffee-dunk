@@ -100,3 +100,49 @@ function findFavouriteNote(posts: Post[]): DiaryStats["favouriteNote"] {
 export function formatRating(value: number): string {
   return value.toFixed(1);
 }
+
+// ---------------------------------------------------------------------------
+// "Where your friends went" (Phase 8.1c)
+// ---------------------------------------------------------------------------
+
+export type FriendCafe = {
+  place_id: string;
+  cafe_name: string;
+  photo_url: string | null; // the most recent friend photo there
+  friends: { name: string; avatar: string | null }[]; // who went (each friend once)
+  last_visit: string | null; // newest post time
+};
+
+// Turn friends' posts into a list of cafés, most recently visited first.
+// Homemade posts are skipped (no café). Pure function: posts in, cafés out.
+export function groupFriendCafes(posts: Post[], limit = 8): FriendCafe[] {
+  const cafes = new Map<string, FriendCafe>();
+  const seenFriends = new Map<string, Set<string>>(); // place_id -> friend ids already listed
+
+  // Posts arrive newest first, so the FIRST post we see for a café is its latest visit
+  for (const post of posts) {
+    if (post.source === "home" || !post.place_id) continue;
+
+    let cafe = cafes.get(post.place_id);
+    if (!cafe) {
+      cafe = {
+        place_id: post.place_id,
+        cafe_name: post.cafe_name ?? "Café",
+        photo_url: post.image_url,
+        friends: [],
+        last_visit: post.created_at,
+      };
+      cafes.set(post.place_id, cafe);
+      seenFriends.set(post.place_id, new Set());
+    }
+
+    const seen = seenFriends.get(post.place_id)!;
+    if (post.user_id && !seen.has(post.user_id)) {
+      seen.add(post.user_id);
+      cafe.friends.push({ name: post.user ?? "a friend", avatar: post.user_avatar });
+    }
+  }
+
+  // A Map remembers the order things were added = most recent visit first
+  return [...cafes.values()].slice(0, limit);
+}

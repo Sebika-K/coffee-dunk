@@ -4,6 +4,10 @@
 
 import { ArtBanner } from "@/components/ArtBanner";
 import { ForYou } from "@/components/ForYou";
+import { FriendsCafes } from "@/components/FriendsCafes";
+import { fetchFriendIds } from "@/lib/friends";
+import { fetchFeed } from "@/lib/posts";
+import { FriendCafe, groupFriendCafes } from "@/lib/stats";
 import { CafeCard } from "@/components/CafeCard";
 import { SearchBar } from "@/components/SearchBar";
 import { COLORS } from "@/constants/theme";
@@ -34,9 +38,10 @@ export default function DiscoverScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [recommendations, setRecommendations] = useState<Recommendations | null>(null);
+  const [friendCafes, setFriendCafes] = useState<FriendCafe[]>([]);
 
-  // Load "For you" whenever Discover comes into view. It's a bonus:
-  // if the backend is off or it fails, the section just doesn't show.
+  // Load the Discover sections whenever Discover comes into view. They're
+  // bonuses: if one fails (e.g. the backend is off), that section just doesn't show.
   useFocusEffect(
     useCallback(() => {
       if (!user) return;
@@ -46,6 +51,16 @@ export default function DiscoverScreen() {
           if (isActive) setRecommendations(result);
         })
         .catch((error) => console.log("Recommendations failed:", error));
+
+      // "Where your friends went": friends' recent posts (only theirs, not mine),
+      // grouped into cafés. Straight from Firebase - no backend needed.
+      fetchFriendIds(user.uid)
+        .then((friendIds) => (friendIds.length > 0 ? fetchFeed(friendIds) : []))
+        .then((posts) => {
+          if (isActive) setFriendCafes(groupFriendCafes(posts));
+        })
+        .catch((error) => console.log("Friends' cafés failed:", error));
+
       return () => {
         isActive = false;
       };
@@ -97,8 +112,9 @@ export default function DiscoverScreen() {
         </View>
 
         <ForYou recommendations={recommendations} />
+        <FriendsCafes cafes={friendCafes} />
 
-        {/* "Where your friends went" and "near me" arrive in the next steps */}
+        {/* "Near me" and recent searches arrive in the next step */}
       </ScrollView>
     );
   }
