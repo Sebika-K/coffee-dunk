@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { auth } from "@/lib/firebase";
 import { fetchUserBio } from "@/lib/posts";
 import { saveBio, saveProfilePhoto, saveUsername } from "@/lib/profile";
+import { USERNAME_MAX, usernameProblem, UsernameTakenError } from "@/lib/usernames";
 import { Ionicons } from "@expo/vector-icons";
 import { signOut } from "firebase/auth";
 import { Image } from "expo-image";
@@ -68,11 +69,20 @@ export default function SettingsScreen() {
 
   async function handleSave() {
     if (!user) return;
+    // Check a NEW username's format first (older names with e.g. spaces are
+    // left alone until you change them)
+    const problem = usernameChanged ? usernameProblem(username.trim()) : null;
+    if (problem) {
+      Alert.alert("Username", problem);
+      return;
+    }
+
     setIsSaving(true);
     try {
-      // Only save what actually changed
-      if (photoChanged) await saveProfilePhoto(user, newPhotoUri);
+      // Only save what actually changed. The username goes first: if it's
+      // taken, we stop before changing anything else.
       if (usernameChanged) await saveUsername(user, username.trim());
+      if (photoChanged) await saveProfilePhoto(user, newPhotoUri);
       if (bioChanged) {
         await saveBio(user.uid, bio.trim());
         setSavedBio(bio.trim());
@@ -80,8 +90,12 @@ export default function SettingsScreen() {
       refreshUser(); // make the nav pill + profile show the new name/photo
       router.back();
     } catch (error) {
-      console.log("Save failed:", error);
-      Alert.alert("Couldn't save", "Something went wrong. Please try again.");
+      if (error instanceof UsernameTakenError) {
+        Alert.alert("Username taken", `"${username.trim()}" is already taken. Try another one.`);
+      } else {
+        console.log("Save failed:", error);
+        Alert.alert("Couldn't save", "Something went wrong. Please try again.");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -142,7 +156,7 @@ export default function SettingsScreen() {
           onChangeText={setUsername}
           autoCapitalize="none"
           autoCorrect={false}
-          maxLength={30}
+          maxLength={USERNAME_MAX}
           placeholder="Username"
           placeholderTextColor={COLORS.placeholder}
         />

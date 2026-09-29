@@ -6,6 +6,7 @@ import { updateProfile, User } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { syncPublicProfile } from "@/lib/users";
+import { claimUsername } from "@/lib/usernames";
 
 // Upload a new profile photo and set it as the account's photo
 export async function saveProfilePhoto(user: User, photoUri: string) {
@@ -22,11 +23,11 @@ export async function saveProfilePhoto(user: User, photoUri: string) {
   await syncPublicProfile(user); // so friends see the new photo too
 }
 
-// Save a new username: on the account itself AND in the users collection
+// Save a new username: claim it first (fails if it's taken), then put it on
+// the account. claimUsername also updates the public profile and frees the old name.
 export async function saveUsername(user: User, username: string) {
+  await claimUsername(user.uid, username, user.displayName);
   await updateProfile(user, { displayName: username });
-  // Update the public profile (username + lowercase copy for search), keeping the bio
-  await syncPublicProfile(user);
 }
 
 // Save a new bio in the users collection

@@ -80,6 +80,30 @@ service cloud.firestore {
       allow write: if isMe(userId);
     }
 
+    // --- Username claims (unique usernames) ------------------------------
+    // usernames/<name in lowercase>  { uid, username }
+    match /usernames/{name} {
+      // Anyone may CHECK one name (signup asks before the account exists),
+      // but nobody can list them all.
+      allow get: if true;
+
+      // Claim a free name: only for yourself, the id must be the lowercase
+      // name, and nothing else in the document.
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && name == request.resource.data.username.lower()
+        && request.resource.data.keys().hasOnly(['uid', 'username']);
+
+      // Your OWN claim: change its capitals (Sam -> sam) or let it go.
+      // Nobody can take over a claim that belongs to someone else.
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && name == request.resource.data.username.lower()
+        && request.resource.data.keys().hasOnly(['uid', 'username']);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
     // --- "Want to try" saves (private to each user) ------------------------
     // users/<me>/saved/<postId> - only I can see or change my saved list.
     // (Rules for users/{userId} above do NOT cover subcollections, so the

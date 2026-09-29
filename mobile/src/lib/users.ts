@@ -7,6 +7,7 @@
 import { db } from "@/lib/firebase";
 import { User } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
+import { claimUsername } from "@/lib/usernames";
 
 // Everyone's username for display: their chosen name, or the start of their email
 export function usernameFor(user: User): string {
@@ -15,15 +16,29 @@ export function usernameFor(user: User): string {
 
 // Create or update the user's public profile from their account details.
 // merge: true = only these fields change; their bio (and anything else) is kept.
+//
+// The username is only copied if the account HAS one (displayName). Right
+// after signing up it doesn't yet - the signup screen claims the name first
+// (see usernames.ts), and we mustn't overwrite that with the email prefix.
 export async function syncPublicProfile(user: User) {
-  const username = usernameFor(user);
+  const nameFields = user.displayName
+    ? { username: user.displayName, username_lower: user.displayName.toLowerCase() }
+    : {};
   await setDoc(
     doc(db, "users", user.uid),
-    {
-      username,
-      username_lower: username.toLowerCase(), // for case-insensitive search
-      photo_url: user.photoURL ?? null,
-    },
+    { ...nameFields, photo_url: user.photoURL ?? null },
     { merge: true }
   );
+}
+
+// Accounts made BEFORE unique usernames have no claim yet. On login, claim
+// their current name if it's free. If someone else already has it, leave it -
+// they can pick a new name in Settings.
+export async function claimExistingUsername(user: User) {
+  if (!user.displayName) return;
+  try {
+    await claimUsername(user.uid, user.displayName);
+  } catch (error) {
+    console.log(`Couldn't claim existing username "${user.displayName}":`, error);
+  }
 }

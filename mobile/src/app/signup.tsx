@@ -3,6 +3,13 @@ import { friendlyError } from "@/lib/authErrors";
 import { useAuth } from "@/lib/AuthContext";
 import { auth } from "@/lib/firebase";
 import { syncPublicProfile } from "@/lib/users";
+import {
+  claimUsername,
+  isUsernameAvailable,
+  USERNAME_MAX,
+  usernameProblem,
+  UsernameTakenError,
+} from "@/lib/usernames";
 import { FirebaseError } from "firebase/app";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { Link } from "expo-router";
@@ -40,21 +47,46 @@ export default function SignupScreen() {
       setErrorMessage(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
       return;
     }
+    const name = username.trim();
+    const problem = usernameProblem(name);
+    if (problem) {
+      setErrorMessage(problem);
+      return;
+    }
 
     setIsLoading(true);
     try {
-      // 1) Create the account (this also logs the new user in)
+      // 1) Is the name free? Checked BEFORE creating the account, so we don't
+      //    make an account and then have to tell them the name is taken.
+      if (!(await isUsernameAvailable(name))) {
+        setErrorMessage(`"${name}" is already taken. Try another username.`);
+        return;
+      }
+
+      // 2) Create the account (this also logs the new user in)
       const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
 
-      // 2) Save the username as the account's display name,
-      //    just like the web app's auth.js did
-      await updateProfile(result.user, { displayName: username.trim() });
+      // 3) Claim the username. In the rare case someone grabbed it in the last
+      //    few seconds, undo: delete the brand-new account and ask for another name.
+      try {
+        await claimUsername(result.user.uid, name);
+      } catch (claimError) {
+        await result.user.delete();
+        throw claimError;
+      }
+
+      // 4) Save the username as the account's display name too
+      await updateProfile(result.user, { displayName: name });
       await syncPublicProfile(result.user); // public profile with the chosen username
       refreshUser(); // show the username right away (not the email)
       // The app moves into the logged-in screens automatically (see _layout.tsx)
     } catch (error) {
       console.log("Signup failed:", error instanceof FirebaseError ? error.code : error);
-      setErrorMessage(friendlyError(error));
+      setErrorMessage(
+        error instanceof UsernameTakenError
+          ? `"${name}" is already taken. Try another username.`
+          : friendlyError(error)
+      );
     } finally {
       setIsLoading(false);
     }
@@ -90,7 +122,7 @@ export default function SignupScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             autoComplete="username"
-            maxLength={30}
+            maxLength={USERNAME_MAX}
             value={username}
             onChangeText={setUsername}
           />
