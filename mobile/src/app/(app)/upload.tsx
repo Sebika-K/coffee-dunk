@@ -1,4 +1,6 @@
 // New post screen: photo, café, caption and rating -> posted to Firebase.
+// Quick by default: photo, where, drink, rating (+ optional caption).
+// Milk, hot/iced, tasting notes and the recipe live under "+ Add details".
 
 import { CafePicker, ChosenCafe } from "@/components/CafePicker";
 import { ChoiceChips, MultiChoiceChips } from "@/components/Chips";
@@ -69,6 +71,18 @@ export default function UploadScreen() {
   const [sweetener, setSweetener] = useState("");
   const [steps, setSteps] = useState("");
   const isHome = source === "home";
+
+  // "+ Add details" folds away the optional extras so a quick post is 4 taps
+  const [showDetails, setShowDetails] = useState(false);
+  // How many extras are filled in (shown on the folded button, so nothing feels lost)
+  const recipeFilled = [beans, coffeeGrams, waterMl, milkMl, sweetener, steps].some(
+    (text) => text.trim() !== ""
+  );
+  const detailsCount =
+    (milk ? 1 : 0) +
+    (temperature ? 1 : 0) +
+    (notes.length > 0 ? 1 : 0) +
+    (isHome && recipeFilled ? 1 : 0);
 
   // A drink is required - and if it's "Other", it needs a typed name
   const hasDrink = drink !== null && (drink !== "other" || drinkCustom.trim() !== "");
@@ -196,6 +210,7 @@ export default function UploadScreen() {
           </Pressable>
         </View>
 
+        {/* ---- QUICK PART: the few things every post needs ---- */}
         <Text style={styles.label}>Where's it from?</Text>
         <ChoiceChips
           options={SOURCES}
@@ -207,38 +222,6 @@ export default function UploadScreen() {
           <>
             <Text style={styles.label}>How did you make it?</Text>
             <ChoiceChips options={BREW_METHODS} selected={method} onChange={setMethod} />
-
-            <Text style={styles.label}>Recipe (optional)</Text>
-            <TextInput
-              style={styles.otherInput}
-              placeholder="Beans, e.g. Onyx Southern Weather"
-              placeholderTextColor={COLORS.placeholder}
-              value={beans}
-              onChangeText={setBeans}
-              maxLength={60}
-            />
-            <View style={styles.amountRow}>
-              <AmountInput label="Coffee" unit="g" value={coffeeGrams} onChange={setCoffeeGrams} />
-              <AmountInput label="Water" unit="ml" value={waterMl} onChange={setWaterMl} />
-              <AmountInput label="Milk" unit="ml" value={milkMl} onChange={setMilkMl} />
-            </View>
-            <TextInput
-              style={styles.otherInput}
-              placeholder="Sweetener, e.g. 1 tsp vanilla syrup"
-              placeholderTextColor={COLORS.placeholder}
-              value={sweetener}
-              onChangeText={setSweetener}
-              maxLength={60}
-            />
-            <TextInput
-              style={styles.captionInput}
-              placeholder={"Steps, e.g.\n1. Bloom 30s with 40ml water\n2. Pour the rest slowly"}
-              placeholderTextColor={COLORS.placeholder}
-              value={steps}
-              onChangeText={setSteps}
-              multiline
-              maxLength={600}
-            />
           </>
         ) : (
           <>
@@ -260,19 +243,9 @@ export default function UploadScreen() {
           />
         )}
 
-        <Text style={styles.label}>Milk (optional)</Text>
-        <ChoiceChips options={MILKS} selected={milk} onChange={setMilk} />
-
-        <Text style={styles.label}>Hot or iced? (optional)</Text>
-        <ChoiceChips options={TEMPERATURES} selected={temperature} onChange={setTemperature} />
-
         <Text style={styles.label}>Your rating</Text>
         <StarRating value={rating} onChange={setRating} />
 
-        <Text style={styles.label}>Tasting notes (optional)</Text>
-        <MultiChoiceChips options={TASTING_NOTES} selected={notes} onChange={setNotes} />
-
-        <Text style={styles.label}>Caption</Text>
         <TextInput
           style={styles.captionInput}
           placeholder="How was it? (optional)"
@@ -283,6 +256,75 @@ export default function UploadScreen() {
           maxLength={300}
         />
         <Text style={styles.counter}>{caption.length}/300</Text>
+
+        {/* ---- DETAILS: optional extras, folded away until you want them ---- */}
+        <Pressable
+          style={styles.detailsToggle}
+          onPress={() => setShowDetails((open) => !open)}
+          accessibilityRole="button"
+        >
+          <Ionicons
+            name={showDetails ? "remove-circle-outline" : "add-circle-outline"}
+            size={20}
+            color={COLORS.plum}
+          />
+          <Text style={styles.detailsToggleText}>
+            {showDetails ? "Hide details" : isHome ? "Add details & recipe" : "Add details"}
+          </Text>
+          {/* When folded, show how many extras are already filled in */}
+          {!showDetails && detailsCount > 0 && (
+            <Text style={styles.detailsCount}>{detailsCount} added</Text>
+          )}
+        </Pressable>
+
+        {showDetails && (
+          <>
+            <Text style={styles.label}>Milk</Text>
+            <ChoiceChips options={MILKS} selected={milk} onChange={setMilk} />
+
+            <Text style={styles.label}>Hot or iced?</Text>
+            <ChoiceChips options={TEMPERATURES} selected={temperature} onChange={setTemperature} />
+
+            <Text style={styles.label}>Tasting notes</Text>
+            <MultiChoiceChips options={TASTING_NOTES} selected={notes} onChange={setNotes} />
+
+            {isHome && (
+              <>
+                <Text style={styles.label}>Recipe</Text>
+                <TextInput
+                  style={styles.otherInput}
+                  placeholder="Beans, e.g. Onyx Southern Weather"
+                  placeholderTextColor={COLORS.placeholder}
+                  value={beans}
+                  onChangeText={setBeans}
+                  maxLength={60}
+                />
+                <View style={styles.amountRow}>
+                  <AmountInput label="Coffee" unit="g" value={coffeeGrams} onChange={setCoffeeGrams} />
+                  <AmountInput label="Water" unit="ml" value={waterMl} onChange={setWaterMl} />
+                  <AmountInput label="Milk" unit="ml" value={milkMl} onChange={setMilkMl} />
+                </View>
+                <TextInput
+                  style={styles.otherInput}
+                  placeholder="Sweetener, e.g. 1 tsp vanilla syrup"
+                  placeholderTextColor={COLORS.placeholder}
+                  value={sweetener}
+                  onChangeText={setSweetener}
+                  maxLength={60}
+                />
+                <TextInput
+                  style={styles.captionInput}
+                  placeholder={"Steps, e.g.\n1. Bloom 30s with 40ml water\n2. Pour the rest slowly"}
+                  placeholderTextColor={COLORS.placeholder}
+                  value={steps}
+                  onChangeText={setSteps}
+                  multiline
+                  maxLength={600}
+                />
+              </>
+            )}
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -431,6 +473,27 @@ const styles = StyleSheet.create({
   counter: {
     alignSelf: "flex-end",
     marginTop: -10,
+    fontSize: 12,
+    color: COLORS.placeholder,
+  },
+  detailsToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    height: 46,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "rgba(125, 46, 77, 0.35)",
+  },
+  detailsToggleText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "600",
+    color: COLORS.plum,
+  },
+  detailsCount: {
     fontSize: 12,
     color: COLORS.placeholder,
   },
