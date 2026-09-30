@@ -7,26 +7,18 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 # so it works no matter which folder the server is started from.
 KEY_PATH = os.path.join(os.path.dirname(__file__), "..", "secrets", "firebase-key.json")
 
-# Initialize Firebase (only once globally)
+# Initialize Firebase (only once globally).
+#   On your Mac: use the secret key file in backend/secrets/.
+#   Online (Google Cloud Run): there's no key file - the server already runs
+#   AS a Google "service account" of your project, so Firebase can use that
+#   identity directly ("Application Default Credentials"). No secret to upload.
 if not firebase_admin._apps:
-    cred = credentials.Certificate(KEY_PATH)
-    firebase_admin.initialize_app(cred)
+    if os.path.exists(KEY_PATH):
+        firebase_admin.initialize_app(credentials.Certificate(KEY_PATH))
+    else:
+        firebase_admin.initialize_app()
 
 db = firestore.client()
-
-def get_posts_by_cafe(cafe_name):
-    posts_ref = db.collection('posts')
-    query = posts_ref.where(filter=FieldFilter('cafe', '==', cafe_name))
-    docs = query.stream()
-    return [
-        {
-            'image_url': doc.get('image_url'),
-            'caption': doc.get('caption'),
-            'rating': doc.get('rating'),
-            'user': doc.get('user'),
-            'user_avatar': doc.get('user_avatar')
-        } for doc in docs
-    ]
 
 def doc_to_post(snap):
     """Turn one Firestore document into a plain dictionary (a "post")."""

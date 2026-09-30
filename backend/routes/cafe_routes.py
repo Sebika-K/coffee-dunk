@@ -1,7 +1,6 @@
 import os
 import requests
-from urllib.parse import quote
-from flask import Blueprint, render_template, request, jsonify, Response
+from flask import Blueprint, request, jsonify, Response
 from .firebase_helpers import get_posts_by_place_id, get_posts_by_user, get_posts_by_drink, get_friend_ids
 from .parsing import parse_coordinates, parse_radius
 from .privacy import visible_posts
@@ -22,8 +21,7 @@ NEARBY_URL  = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
 
 def find_cafes_near_city(city, radius):
     """
-    Shared logic used by BOTH the web page (/results) and the mobile API
-    (/api/cafes/nearby). Turns a city name into coordinates, then asks
+    Used by /api/cafes/nearby. Turns a city name into coordinates, then asks
     Google for cafés around that point.
 
     Returns (cafes, error). If something goes wrong, cafes is [] and
@@ -77,26 +75,6 @@ def find_cafes_near_point(lat, lng, radius):
     return cafes, None
 
 
-@cafe_bp.route("/results")
-def results():
-    """Web page version (unchanged behaviour for the existing website)."""
-    city = request.args.get("city", "").strip()
-    radius = parse_radius(request.args.get("radius"))
-    cafes = []
-
-    if city:
-        found, _error = find_cafes_near_city(city, radius)
-        for c in found:
-            cafes.append({
-                "name": c["name"],
-                "place_id": c["place_id"],
-                "rating": c["rating"] if c["rating"] is not None else "N/A",
-                "image_url": get_place_photo(c["photo_ref"]),
-            })
-
-    return render_template("results.html", cafes=cafes, city=city, radius=radius)
-
-
 @cafe_bp.route("/api/cafes/nearby")
 def api_cafes_nearby():
     """
@@ -132,15 +110,6 @@ def api_cafes_nearby():
 
 PHOTO_URL = "https://maps.googleapis.com/maps/api/place/photo"
 
-
-def get_place_photo(photo_ref):
-    """
-    Build the photo address for the web page. It points at OUR server
-    (/api/photo), not Google, so the secret key never reaches the browser.
-    """
-    if photo_ref:
-        return f"/api/photo?ref={quote(photo_ref)}"
-    return "/static/images/placeholder.jpg"
 
 
 @cafe_bp.route("/api/photo")
@@ -223,12 +192,9 @@ def api_cafe_search():
 
 def get_cafe_posts(place_id):
     """
-    Shared logic used by BOTH the web page (/cafe/<place_id>) and the mobile
-    API (/api/cafes/<place_id>/posts).
-
-    Loads all posts for one café from Firestore and fills in missing user
+    Used by /api/cafes/<place_id>/posts. Loads all posts for one café from Firestore and fills in missing user
     names/avatars from Firebase Auth. Missing values stay None - it's up to
-    whoever DISPLAYS the data (web page or app) to choose a fallback image.
+    the app to choose a fallback image.
     Returns posts newest first.
     """
     posts = get_posts_by_place_id(place_id)
@@ -258,22 +224,6 @@ def get_cafe_posts(place_id):
     # Newest first (posts without a date go last)
     posts.sort(key=lambda p: p["created_at"].timestamp() if p.get("created_at") else 0, reverse=True)
     return posts
-
-
-@cafe_bp.route("/cafe/<place_id>")
-def cafe_detail(place_id):
-    """Web page version: adds display fallbacks, then renders HTML."""
-    cafe_name = request.args.get("name", "")
-    uploads = get_cafe_posts(place_id)
-
-    for u in uploads:
-        u["image_url"]   = u.get("image_url")   or "/static/images/placeholder.jpg"
-        u["caption"]     = u.get("caption")     or ""
-        u["rating"]      = u.get("rating")      or "N/A"
-        u["user"]        = u.get("user")        or "Anon"
-        u["user_avatar"] = u.get("user_avatar") or "/static/assets/default-avatar.jpg"
-
-    return render_template("cafe_detail.html", cafe_name=cafe_name, uploads=uploads)
 
 
 @cafe_bp.route("/api/cafes/<place_id>/posts")

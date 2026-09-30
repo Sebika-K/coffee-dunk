@@ -1,7 +1,6 @@
 # Secrets - never commit these
 backend/secrets/
 backend/.env
-backend/static/js/firebase-config.js
 
 # Python virtual environment (rebuild with: pip install -r requirements.txt)
 backend/venv/
