@@ -1,6 +1,7 @@
 // Your profile: photo, name, stats, bio and all your posts.
 // Rebuilt from the web app's profile.html / profile.css.
 
+import { BeanBackground } from "@/components/BeanBackground";
 import { ChoiceChips } from "@/components/Chips";
 import { DiaryCard } from "@/components/DiaryCard";
 import { PostGrid } from "@/components/PostGrid";
@@ -16,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { User } from "firebase/auth";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
@@ -125,11 +126,7 @@ export default function ProfileScreen() {
   );
 
   return (
-    <ImageBackground
-      source={require("@/assets/images/background_screen.png")}
-      style={styles.background}
-      resizeMode="cover"
-    >
+    <BeanBackground style={styles.background}>
       <PostGrid
         posts={view === "mine" ? posts : savedPosts}
         onPressPost={(post) =>
@@ -153,7 +150,7 @@ export default function ProfileScreen() {
       >
         <Ionicons name="add" size={30} color="white" />
       </Pressable>
-    </ImageBackground>
+    </BeanBackground>
   );
 }
 
