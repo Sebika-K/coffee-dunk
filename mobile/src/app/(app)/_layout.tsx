@@ -17,6 +17,7 @@ export default function AppLayout() {
       <Stack.Screen name="friends" />
       <Stack.Screen name="user/[userId]" />
       <Stack.Screen name="delete-account" />
+      <Stack.Screen name="blocked" />
     </Stack>
   );
 }

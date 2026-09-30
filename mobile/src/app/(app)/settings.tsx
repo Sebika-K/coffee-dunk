@@ -190,6 +190,10 @@ export default function SettingsScreen() {
           <Text style={styles.logOutText}>Log out</Text>
         </Pressable>
 
+        <Pressable style={styles.deleteAccountButton} onPress={() => router.push("/blocked")}>
+          <Text style={styles.blockedText}>Blocked accounts</Text>
+        </Pressable>
+
         {/* Small and quiet on purpose - it's permanent */}
         <Pressable style={styles.deleteAccountButton} onPress={() => router.push("/delete-account")}>
           <Text style={styles.deleteAccountText}>Delete account</Text>
@@ -306,6 +310,10 @@ const styles = StyleSheet.create({
   deleteAccountButton: {
     alignSelf: "center",
     padding: 8,
+  },
+  blockedText: {
+    color: COLORS.plum,
+    fontSize: 15,
   },
   deleteAccountText: {
     color: COLORS.placeholder,

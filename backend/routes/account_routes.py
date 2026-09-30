@@ -51,10 +51,17 @@ def find_documents_to_delete(uid):
     for f in db.collection("friendships").where(filter=FieldFilter("members", "array_contains", uid)).stream():
         add(f.reference)
 
-    # 4) Your saved list, 5) your username claim(s), 6) your profile
+    # 4) Your saved list + block list, 5) your username claim(s), 6) your profile
     user_ref = db.collection("users").document(uid)
     for saved in user_ref.collection("saved").stream():
         add(saved.reference)
+    for blocked in user_ref.collection("blocked").stream():
+        add(blocked.reference)
+    # ...and other people's blocks OF you (the block's id is the blocked person's id)
+    for block in db.collection_group("blocked").stream():
+        if block.id == uid:
+            add(block.reference)
+    # (Reports are kept on purpose - they're the record of what was reported.)
     for claim in db.collection("usernames").where(filter=FieldFilter("uid", "==", uid)).stream():
         add(claim.reference)
     add(user_ref)

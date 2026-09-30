@@ -7,6 +7,7 @@
 
 import { PostGrid } from "@/components/PostGrid";
 import { ProfileSummary } from "@/components/ProfileSummary";
+import { openSafetyMenu } from "@/components/SafetyMenu";
 import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
@@ -126,6 +127,23 @@ export default function UserProfileScreen() {
         <Text style={styles.username} numberOfLines={1}>
           {name}
         </Text>
+        {/* ⋯ -> Report / Block */}
+        {myId && userId && profile && (
+          <Pressable
+            onPress={() =>
+              openSafetyMenu({
+                myId,
+                otherId: userId,
+                otherName: name,
+                onBlocked: () => router.back(),
+              })
+            }
+            style={styles.backButton}
+            accessibilityLabel="More options"
+          >
+            <Ionicons name="ellipsis-horizontal" size={22} color={COLORS.plum} />
+          </Pressable>
+        )}
       </View>
 
       {isLoading ? (

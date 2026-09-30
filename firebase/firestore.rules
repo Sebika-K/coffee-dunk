@@ -112,8 +112,32 @@ service cloud.firestore {
       allow read, write: if isMe(userId);
     }
 
+    // --- Blocking (Report & block) -----------------------------------------
+    // users/<me>/blocked/<theirId> - my PRIVATE block list; only I see or change it.
+    match /users/{userId}/blocked/{otherId} {
+      allow read, write: if isMe(userId);
+    }
+
+    // --- Reports ------------------------------------------------------------
+    // Anyone logged in can SEND a report (as themselves), but nobody can read,
+    // change or delete reports from the app - only the owner, in the Console.
+    match /reports/{reportId} {
+      allow create: if signedIn()
+        && request.resource.data.reporter_id == request.auth.uid
+        && request.resource.data.keys().hasOnly(
+             ['reporter_id', 'reported_user_id', 'post_id', 'reason', 'created_at']);
+    }
+
     // --- Friendships (one document per pair of people) ----------------------
     match /friendships/{pairId} {
+      // Has either person blocked the other? (Checked when sending a request.)
+      function eitherBlocked(members) {
+        let a = members[0];
+        let b = members[1];
+        return exists(/databases/$(database)/documents/users/$(a)/blocked/$(b))
+          || exists(/databases/$(database)/documents/users/$(b)/blocked/$(a));
+      }
+
       // You can see a friendship only if you're in it.
       // (resource == null: checking a pair that doesn't exist yet is allowed,
       //  so the app can tell "not friends" apart from "no permission".)
@@ -127,6 +151,7 @@ service cloud.firestore {
         && request.auth.uid in request.resource.data.members
         && request.resource.data.members.size() == 2
         && request.resource.data.status == 'pending'
+        && !eitherBlocked(request.resource.data.members)
         && (pairId == request.resource.data.members[0] + '_' + request.resource.data.members[1]
             || pairId == request.resource.data.members[1] + '_' + request.resource.data.members[0]);
 

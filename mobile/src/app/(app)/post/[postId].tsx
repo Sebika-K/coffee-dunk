@@ -6,6 +6,7 @@ import { DoubleTapHeart } from "@/components/DoubleTapHeart";
 import { LikeButton } from "@/components/LikeButton";
 import { LikedByList } from "@/components/LikedByList";
 import { RecipeCard } from "@/components/RecipeCard";
+import { openSafetyMenu } from "@/components/SafetyMenu";
 import { fetchLikersOfMyPost, isLikedByMe, setLiked } from "@/lib/likes";
 import { PublicProfile } from "@/lib/friends";
 import { SaveButton } from "@/components/SaveButton";
@@ -143,6 +144,24 @@ export default function PostScreen() {
         <Pressable onPress={() => router.back()} style={styles.iconButton} accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={24} color={COLORS.plum} />
         </Pressable>
+        {/* Someone else's post: ⋯ -> Report / Block */}
+        {!isMine && post && user && post.user_id && (
+          <Pressable
+            onPress={() =>
+              openSafetyMenu({
+                myId: user.uid,
+                otherId: post.user_id!,
+                otherName: post.user ?? "this person",
+                postId: post.id,
+                onBlocked: () => router.back(),
+              })
+            }
+            style={styles.iconButton}
+            accessibilityLabel="More options"
+          >
+            <Ionicons name="ellipsis-horizontal" size={22} color={COLORS.plum} />
+          </Pressable>
+        )}
         {isMine && (
           <View style={styles.headerActions}>
             <Pressable

@@ -4,6 +4,7 @@ import { COLORS } from "@/constants/theme";
 import { useAuth } from "@/lib/AuthContext";
 import { avatarSource } from "@/lib/format";
 import { openUserProfile } from "@/lib/navigation";
+import { fetchBlockedIds } from "@/lib/safety";
 import {
   acceptFriendRequest,
   FriendState,
@@ -44,7 +45,12 @@ export default function FindFriendsScreen() {
     setErrorMessage("");
     setIsSearching(true);
     try {
-      const people = await searchUsers(text, user.uid);
+      // Search, and load my block list at the same time
+      const [found, blocked] = await Promise.all([
+        searchUsers(text, user.uid),
+        fetchBlockedIds(user.uid).catch(() => new Set<string>()),
+      ]);
+      const people = found.filter((p) => !blocked.has(p.id)); // hide people I've blocked
       // Look up my relationship with each person, all at the same time
       const states = await Promise.all(people.map((p) => getFriendState(user.uid, p.id)));
       setResults(people.map((p, i) => ({ ...p, state: states[i] })));
