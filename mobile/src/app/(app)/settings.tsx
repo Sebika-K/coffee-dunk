@@ -4,7 +4,7 @@
 import { COLORS } from "@/constants/theme";
 import { useAuth } from "@/lib/AuthContext";
 import { auth } from "@/lib/firebase";
-import { fetchUserBio } from "@/lib/posts";
+import { fetchUserBio, refreshAuthorOnMyPosts } from "@/lib/posts";
 import { saveBio, saveProfilePhoto, saveUsername } from "@/lib/profile";
 import { USERNAME_MAX, usernameProblem, UsernameTakenError } from "@/lib/usernames";
 import { Ionicons } from "@expo/vector-icons";
@@ -86,6 +86,13 @@ export default function SettingsScreen() {
       if (bioChanged) {
         await saveBio(user.uid, bio.trim());
         setSavedBio(bio.trim());
+      }
+      // New name or photo -> update the copy stored on your old posts too.
+      // If this part fails, your profile is still saved - we just log it.
+      if (usernameChanged || photoChanged) {
+        await refreshAuthorOnMyPosts(user.uid, user.displayName ?? username.trim(), user.photoURL).catch(
+          (error) => console.log("Couldn't refresh name/photo on old posts:", error)
+        );
       }
       refreshUser(); // make the nav pill + profile show the new name/photo
       router.back();

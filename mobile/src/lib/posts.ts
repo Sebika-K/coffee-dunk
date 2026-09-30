@@ -196,6 +196,33 @@ export async function fetchUserBio(userId: string): Promise<string> {
   return snap.exists() ? snap.data().bio ?? "" : "";
 }
 
+// Refresh the author's name + photo on ALL your posts.
+//
+// WHY: each post stores a COPY of who wrote it (user, user_avatar), so screens
+// can show a post without looking up its author separately. That copy doesn't
+// update itself - after you change your name or photo, your old posts would
+// still show the old ones. So after saving, we rewrite the copy on each post.
+//
+// Batches hold up to 500 changes, so a very active poster is done in chunks.
+const BATCH_LIMIT = 500;
+
+export async function refreshAuthorOnMyPosts(
+  userId: string,
+  username: string,
+  avatarUrl: string | null
+) {
+  const snapshot = await getDocs(query(collection(db, "uploads"), where("user_id", "==", userId)));
+
+  for (let i = 0; i < snapshot.docs.length; i += BATCH_LIMIT) {
+    const batch = writeBatch(db);
+    snapshot.docs.slice(i, i + BATCH_LIMIT).forEach((post) => {
+      // Only these two fields change - the rules allow exactly that on your own posts
+      batch.update(post.ref, { user: username, user_avatar: avatarUrl });
+    });
+    await batch.commit();
+  }
+}
+
 // Delete one of YOUR posts: the post AND its likes, then the photo file.
 export async function deletePost(post: Post) {
   const postRef = doc(db, "uploads", post.id);
