@@ -4,7 +4,7 @@
 import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
 import { Image } from "expo-image";
-import { ReactElement } from "react";
+import { ReactElement, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text } from "react-native";
 
 const PLACEHOLDER = require("@/assets/images/cafe-placeholder.jpg");
@@ -27,21 +27,32 @@ export function PostGrid({ posts, onPressPost, emptyText, header }: Props) {
       ListHeaderComponent={header}
       ListEmptyComponent={<Text style={styles.emptyText}>{emptyText}</Text>}
       renderItem={({ item }) => (
-        <Pressable style={styles.postCard} onPress={() => onPressPost(item)}>
-          <Image
-            // Only real web links are photos (a very old post may hold a website path)
-            source={item.image_url?.startsWith("http") ? { uri: item.image_url } : PLACEHOLDER}
-            // Shown while the photo loads - and it stays if the photo can't load,
-            // so a broken photo shows the placeholder instead of an empty white tile
-            placeholder={PLACEHOLDER}
-            placeholderContentFit="cover"
-            style={styles.postImage}
-            contentFit="cover"
-            transition={200}
-          />
-        </Pressable>
+        <PostTile post={item} onPress={() => onPressPost(item)} />
       )}
     />
+  );
+}
+
+// One photo in the grid. If the photo can't load (a broken link, a deleted
+// file...), switch to the placeholder instead of leaving an empty tile.
+function PostTile({ post, onPress }: { post: Post; onPress: () => void }) {
+  const [failed, setFailed] = useState(false);
+  // Only real web links are photos (a very old post may hold a website path)
+  const hasPhoto = post.image_url?.startsWith("http") && !failed;
+
+  return (
+    <Pressable style={styles.postCard} onPress={onPress}>
+      <Image
+        source={hasPhoto ? { uri: post.image_url! } : PLACEHOLDER}
+        onError={(event) => {
+          console.log("Post photo failed:", post.id, event.error);
+          setFailed(true);
+        }}
+        style={styles.postImage}
+        contentFit="cover"
+        transition={200}
+      />
+    </Pressable>
   );
 }
 

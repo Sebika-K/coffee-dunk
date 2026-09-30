@@ -2,6 +2,7 @@
 
 import { COLORS } from "@/constants/theme";
 import { Cafe, cafePhotoUrl } from "@/lib/api";
+import { formatRating } from "@/lib/stats";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -39,7 +40,7 @@ export function CafeCard({ cafe, onPress }: Props) {
       {/* Plum star + number, matching the stars used on posts */}
       <View style={styles.ratingRow}>
         <Ionicons name="star" size={13} color={COLORS.plum} />
-        <Text style={styles.rating}>{cafe.rating ?? "No rating yet"}</Text>
+        <Text style={styles.rating}>{cafe.rating != null ? formatRating(cafe.rating) : "No rating yet"}</Text>
         {cafe.rating != null && cafe.rating_count ? (
           <Text style={styles.reviewCount}>· {formatCount(cafe.rating_count)} reviews</Text>
         ) : null}

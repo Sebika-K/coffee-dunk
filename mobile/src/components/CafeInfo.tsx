@@ -4,6 +4,7 @@
 
 import { COLORS } from "@/constants/theme";
 import { CafeDetails, cafePhotoUrl } from "@/lib/api";
+import { formatRating } from "@/lib/stats";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useState } from "react";
@@ -57,7 +58,7 @@ export function CafeInfo({ name, details }: Props) {
             {details.rating != null && (
               <>
                 <Ionicons name="star" size={14} color={COLORS.plum} />
-                <Text style={styles.metaStrong}>{details.rating}</Text>
+                <Text style={styles.metaStrong}>{formatRating(details.rating)}</Text>
                 {details.rating_count ? (
                   <Text style={styles.meta}>({details.rating_count.toLocaleString()})</Text>
                 ) : null}
