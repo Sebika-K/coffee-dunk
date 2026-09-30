@@ -10,11 +10,15 @@ import { fetchFeed } from "@/lib/posts";
 import { FriendCafe, groupFriendCafes } from "@/lib/stats";
 import { CafeCard } from "@/components/CafeCard";
 import { SearchBar } from "@/components/SearchBar";
+import { SuggestionList } from "@/components/SuggestionList";
+import { usePlaceSuggestions } from "@/hooks/usePlaceSuggestions";
 import { COLORS } from "@/constants/theme";
 import {
   Cafe,
   CafePage,
+  PlaceSuggestion,
   fetchCafesNearPoint,
+  fetchCitySuggestions,
   fetchMoreCafes,
   fetchNearbyCafes,
   fetchRecommendations,
@@ -45,6 +49,10 @@ export default function DiscoverScreen() {
   const { user } = useAuth();
 
   const [city, setCity] = useState("");
+  // true while the person is typing in the search bar - only then do we show suggestions
+  // (not when the app fills the bar itself, e.g. after tapping a recent search)
+  const [isTyping, setIsTyping] = useState(false);
+  const { suggestions, endSession } = usePlaceSuggestions(isTyping ? city : "", fetchCitySuggestions);
   const [cafes, setCafes] = useState<Cafe[] | null>(null); // null = haven't searched yet
   const [isLoading, setIsLoading] = useState(false);
   // Ticket for the next 20 cafés of the current search (null = no more)
@@ -106,13 +114,27 @@ export default function DiscoverScreen() {
     }
   }
 
-  // Search by city (typed, or tapped from recent searches)
+  function handleCityChange(text: string) {
+    setCity(text);
+    setIsTyping(true);
+  }
+
+  // Search by city (typed, picked from suggestions, or tapped from recent searches).
+  // cityName can be the full "Dallas, TX, USA" - the full name finds the right
+  // Dallas, while the title just says "Cafés in Dallas".
   async function searchCity(cityName: string) {
     const name = cityName.trim();
     if (name === "") return;
+    setIsTyping(false); // hide the suggestions
     setCity(name);
-    await runSearch(`Cafés in ${name}`, () => fetchNearbyCafes(name));
+    await runSearch(`Cafés in ${shortName(name)}`, () => fetchNearbyCafes(name));
     setRecentSearches(await addRecentSearch(name));
+  }
+
+  // Tapped a suggestion: that typing session is over, then search it
+  function pickSuggestion(suggestion: PlaceSuggestion) {
+    endSession();
+    searchCity(suggestion.description);
   }
 
   // 📍 Near me: ask for location permission, get the phone's position, search there
@@ -126,6 +148,7 @@ export default function DiscoverScreen() {
       return;
     }
     setCity("");
+    setIsTyping(false);
     await runSearch("Cafés near you", async () => {
       // A recent known position is instant; otherwise ask for a fresh one
       const position =
@@ -165,6 +188,7 @@ export default function DiscoverScreen() {
 
   // Back to the Discover home
   function clearSearch() {
+    setIsTyping(false);
     setCafes(null);
     setErrorMessage("");
   }
@@ -187,7 +211,8 @@ export default function DiscoverScreen() {
       >
         <ArtBanner />
         <View style={styles.searchArea}>
-          <SearchBar value={city} onChangeText={setCity} onSubmit={() => searchCity(city)} />
+          <SearchBar value={city} onChangeText={handleCityChange} onSubmit={() => searchCity(city)} />
+          <SuggestionList suggestions={suggestions} onPick={pickSuggestion} />
 
           {/* Quick options under the search bar */}
           <View style={styles.quickRow}>
@@ -198,7 +223,7 @@ export default function DiscoverScreen() {
             {recentSearches.map((recent) => (
               <Pressable key={recent} style={styles.recentChip} onPress={() => searchCity(recent)}>
                 <Ionicons name="time-outline" size={13} color={COLORS.plum} />
-                <Text style={styles.recentText}>{recent}</Text>
+                <Text style={styles.recentText}>{shortName(recent)}</Text>
               </Pressable>
             ))}
             {recentSearches.length > 0 && (
@@ -230,8 +255,11 @@ export default function DiscoverScreen() {
           <Ionicons name="chevron-back" size={22} color={COLORS.plum} />
         </Pressable>
         <View style={styles.flexOne}>
-          <SearchBar value={city} onChangeText={setCity} onSubmit={() => searchCity(city)} />
+          <SearchBar value={city} onChangeText={handleCityChange} onSubmit={() => searchCity(city)} />
         </View>
+      </View>
+      <View style={styles.resultsSuggestions}>
+        <SuggestionList suggestions={suggestions} onPick={pickSuggestion} />
       </View>
       <Text style={styles.resultsTitle}>{resultsTitle}</Text>
       <View style={styles.statusArea}>{status}</View>
@@ -266,7 +294,17 @@ export default function DiscoverScreen() {
   );
 }
 
+// "Dallas, TX, USA" -> "Dallas" (for titles and chips; the full name is kept for searching)
+function shortName(place: string) {
+  return place.split(",")[0].trim();
+}
+
 const styles = StyleSheet.create({
+  resultsSuggestions: {
+    paddingHorizontal: 12,
+    marginTop: -8, // sit snugly under the search bar row
+    marginBottom: 8,
+  },
   loadMoreSpinner: {
     marginVertical: 20,
   },

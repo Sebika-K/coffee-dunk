@@ -52,6 +52,24 @@ export async function fetchMoreCafes(pageToken: string): Promise<CafePage> {
   return fetchCafes(`${API_URL}/api/cafes/nearby?page_token=${encodeURIComponent(pageToken)}`);
 }
 
+// One autocomplete suggestion, e.g. main "Dallas", secondary "TX, USA"
+export type PlaceSuggestion = {
+  description: string; // the full name, "Dallas, TX, USA"
+  main: string;
+  secondary: string | null;
+  place_id: string;
+};
+
+// City suggestions while typing. sessionToken groups one person's typing
+// into a single Google "session" (cheaper than paying per keystroke).
+export async function fetchCitySuggestions(query: string, sessionToken: string): Promise<PlaceSuggestion[]> {
+  const url = `${API_URL}/api/places/autocomplete?q=${encodeURIComponent(query)}&session=${sessionToken}`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Suggestions failed (${response.status})`);
+  const data = await response.json();
+  return data.suggestions;
+}
+
 // Shared by all three searches above
 async function fetchCafes(url: string): Promise<CafePage> {
   let response: Response;

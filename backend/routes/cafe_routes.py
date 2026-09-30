@@ -145,6 +145,50 @@ def api_cafes_nearby():
     })
 
 
+AUTOCOMPLETE_URL = "https://maps.googleapis.com/maps/api/place/autocomplete/json"
+
+
+@cafe_bp.route("/api/places/autocomplete")
+def api_places_autocomplete():
+    """
+    Suggestions while someone types, e.g. "Dal" -> Dallas, TX / Dalhart, TX.
+      /api/places/autocomplete?q=Dal&session=abc123
+
+    "session" is a random id the app makes when someone starts typing and
+    changes after they pick a suggestion. Google groups every keystroke with the
+    same id into one "session" for billing, instead of charging each one separately.
+    """
+    q = (request.args.get("q") or "").strip()
+    if len(q) < 2:
+        # Too short to be useful (and saves a paid request)
+        return jsonify({"suggestions": []})
+
+    params = {"input": q, "types": "(cities)", "key": GOOGLE_API_KEY}
+    session = (request.args.get("session") or "").strip()
+    if session:
+        params["sessiontoken"] = session
+
+    try:
+        data = requests.get(AUTOCOMPLETE_URL, params=params, timeout=10).json()
+    except requests.RequestException as e:
+        return jsonify({"error": "Could not reach Google", "detail": str(e)}), 502
+
+    if data.get("status") not in ("OK", "ZERO_RESULTS"):
+        return jsonify({"error": data.get("error_message") or data.get("status")}), 502
+
+    # Keep only what the app shows: "Dallas" in bold, "TX, USA" underneath
+    suggestions = []
+    for p in data.get("predictions", []):
+        parts = p.get("structured_formatting") or {}
+        suggestions.append({
+            "description": p.get("description"),           # "Dallas, TX, USA"
+            "main": parts.get("main_text") or p.get("description"),  # "Dallas"
+            "secondary": parts.get("secondary_text"),       # "TX, USA"
+            "place_id": p.get("place_id"),
+        })
+    return jsonify({"suggestions": suggestions})
+
+
 PHOTO_URL = "https://maps.googleapis.com/maps/api/place/photo"
 
 
