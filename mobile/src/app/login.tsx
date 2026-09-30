@@ -8,6 +8,7 @@ import { useState } from "react";
 import {
   Alert,
   ImageBackground,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -66,60 +67,64 @@ export default function LoginScreen() {
       resizeMode="cover"
     >
 
-      {/* Moves the card up when the keyboard opens, so it isn't covered */}
-      <KeyboardAvoidingView
-        style={styles.keyboardArea}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <View style={styles.card}>
-          <TextInput
-            style={[styles.input, styles.emailInput]}
-            placeholder="Email"
-            placeholderTextColor={COLORS.placeholder}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-            value={email}
-            onChangeText={setEmail}
-          />
+      {/* Tapping anywhere outside a text box closes the keyboard.
+          accessible={false} stops screen readers treating the whole screen as one big button. */}
+      <Pressable style={styles.tapArea} onPress={Keyboard.dismiss} accessible={false}>
+        {/* Moves the card up when the keyboard opens, so it isn't covered */}
+        <KeyboardAvoidingView
+          style={styles.keyboardArea}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View style={styles.card}>
+            <TextInput
+              style={[styles.input, styles.emailInput]}
+              placeholder="Email"
+              placeholderTextColor={COLORS.placeholder}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              value={email}
+              onChangeText={setEmail}
+            />
 
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={COLORS.placeholder}
-            secureTextEntry
-            autoComplete="password"
-            value={password}
-            onChangeText={setPassword}
-          />
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor={COLORS.placeholder}
+              secureTextEntry
+              autoComplete="password"
+              value={password}
+              onChangeText={setPassword}
+            />
 
-          {errorMessage !== "" && <Text style={styles.errorText}>{errorMessage}</Text>}
+            {errorMessage !== "" && <Text style={styles.errorText}>{errorMessage}</Text>}
 
-          <Pressable style={styles.forgotButton} onPress={handleForgotPassword}>
-            <Text style={styles.linkText}>Forgot Password?</Text>
-          </Pressable>
+            <Pressable style={styles.forgotButton} onPress={handleForgotPassword}>
+              <Text style={styles.linkText}>Forgot Password?</Text>
+            </Pressable>
 
-          <Pressable
-            onPress={handleLogin}
-            disabled={!canSubmit}
-            style={({ pressed }) => [
-              styles.loginButton,
-              pressed && styles.loginButtonPressed,
-              !canSubmit && styles.loginButtonDisabled,
-            ]}
-          >
-            <Text style={styles.loginButtonText}>{isLoading ? "Logging in…" : "Login"}</Text>
-          </Pressable>
+            <Pressable
+              onPress={handleLogin}
+              disabled={!canSubmit}
+              style={({ pressed }) => [
+                styles.loginButton,
+                pressed && styles.loginButtonPressed,
+                !canSubmit && styles.loginButtonDisabled,
+              ]}
+            >
+              <Text style={styles.loginButtonText}>{isLoading ? "Logging in…" : "Login"}</Text>
+            </Pressable>
 
-          <View style={styles.signupRow}>
-            <Text style={styles.fadedText}>Don't have an account? </Text>
-            {/* replace: swap this screen for Sign Up instead of stacking on top */}
-            <Link href="/signup" replace>
-              <Text style={styles.linkText}>Sign Up</Text>
-            </Link>
+            <View style={styles.signupRow}>
+              <Text style={styles.fadedText}>Don't have an account? </Text>
+              {/* replace: swap this screen for Sign Up instead of stacking on top */}
+              <Link href="/signup" replace>
+                <Text style={styles.linkText}>Sign Up</Text>
+              </Link>
+            </View>
           </View>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </Pressable>
     </ImageBackground>
   );
 }
@@ -127,6 +132,9 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   background: {
     flex: 1, // fill the whole screen
+  },
+  tapArea: {
+    flex: 1, // cover the whole screen so a tap anywhere counts
   },
   keyboardArea: {
     flex: 1,
