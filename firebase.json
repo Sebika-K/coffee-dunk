@@ -1,7 +1,11 @@
 {
   "hosting": {
     "public": "firebase/hosting",
-    "ignore": ["firebase.json", "**/.*"]
+    "ignore": [
+      "firebase.json",
+      "**/.*"
+    ],
+    "cleanUrls": true
   },
   "firestore": {
     "rules": "firebase/firestore.rules"

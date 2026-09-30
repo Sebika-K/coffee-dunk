@@ -1,0 +1,89 @@
+<!doctype html>
+<!--
+  Coffee Dunk - Privacy Policy.
+  Apple requires every app to have one, linked from the App Store listing AND
+  from inside the app (guideline 5.1.1). Served at https://coffee-dunk.web.app/privacy
+  Deploy (from the repo root):  npx firebase-tools deploy --only hosting
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy · Coffee Dunk</title>
+    <style>
+      :root { --plum: #7d2e4d; --latte: #cba781; --cream: #fdf3e7; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; padding: 24px 16px 48px; background: var(--latte); color: #3d1f2b;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.55;
+      }
+      main { max-width: 720px; margin: 0 auto; background: var(--cream); border-radius: 22px; padding: 28px 24px; }
+      h1 { color: var(--plum); margin: 0 0 4px; font-size: 28px; }
+      h2 { color: var(--plum); margin: 28px 0 8px; font-size: 19px; }
+      .updated { color: rgba(125, 46, 77, 0.7); margin: 0 0 20px; font-size: 14px; }
+      a { color: var(--plum); font-weight: 600; }
+      ul { padding-left: 20px; }
+      li { margin-bottom: 6px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Privacy Policy</h1>
+      <p class="updated">Last updated: September 30, 2026</p>
+
+      <p>Coffee Dunk is a friends-only coffee journal. This policy explains what we collect, why, who can see it, and how to delete it. Questions? Email <a href="mailto:sebikakhulal07@gmail.com">sebikakhulal07@gmail.com</a>.</p>
+
+      <h2>What we collect</h2>
+      <ul>
+        <li><strong>Account:</strong> your email address and password (the password is handled by Google Firebase Authentication; we never see it), your username, and, if you add them, a profile photo and bio.</li>
+        <li><strong>Your coffee posts:</strong> photos you upload, drink details, ratings, tasting notes, recipes, the café a post is for, and when you posted or edited it.</li>
+        <li><strong>Friends and activity:</strong> friend requests and friendships, likes, saved posts, and people you've blocked.</li>
+        <li><strong>Reports:</strong> if you report a post or a person, we store who reported, who or what was reported, the reason, and when.</li>
+        <li><strong>Location (only if you allow it):</strong> when you tap "Near me", or when suggesting cafés while you post, your phone's approximate location is sent to our server to find nearby cafés. We don't store it.</li>
+        <li><strong>Searches:</strong> city and café names you type are sent to our server to find results. Your recent searches are saved only on your phone.</li>
+        <li><strong>Technical logs:</strong> our server's hosting provider keeps standard request logs (such as IP address and time) for security and troubleshooting.</li>
+      </ul>
+      <p>We don't use advertising, analytics or tracking tools, and we never sell your data.</p>
+
+      <h2>How we use it</h2>
+      <ul>
+        <li>To run the app: your account, your coffee diary, your friends feed, likes and saves.</li>
+        <li>To find cafés and show café details, such as the address, hours and photos.</li>
+        <li>To show "What to order here" on café pages: drink ratings from everyone's posts at a café are combined into anonymous totals. Your name and posts are never shown to people who aren't your friends.</li>
+        <li>To suggest cafés based on what you and your friends have enjoyed.</li>
+        <li>To keep the community safe: to review reports and act on them.</li>
+      </ul>
+
+      <h2>Who can see what</h2>
+      <ul>
+        <li><strong>Your posts</strong> are visible only to you and to people you've accepted as friends.</li>
+        <li><strong>Your profile</strong> (username, photo and bio) can be seen by other signed-in Coffee Dunk users, so friends can find you.</li>
+        <li><strong>Likes</strong> are private: only the person who posted sees who liked it.</li>
+        <li><strong>Blocking</strong> someone removes the friendship and stops friend requests between you.</li>
+      </ul>
+
+      <h2>Services we rely on</h2>
+      <p>We use these providers to run Coffee Dunk. They process data only to provide their service to us, under their own privacy and security commitments:</p>
+      <ul>
+        <li><strong>Google Firebase</strong> (Authentication, Cloud Firestore database, Cloud Storage for photos, Hosting): stores your account, posts and photos.</li>
+        <li><strong>Google Cloud Run</strong>: runs our server.</li>
+        <li><strong>Google Maps Platform (Places)</strong>: café search, suggestions and details. Search text, and location when you allow it, are sent to Google to get results.</li>
+      </ul>
+
+      <h2>Keeping and deleting your data</h2>
+      <ul>
+        <li>We keep your data while your account exists.</li>
+        <li>You can delete your account at any time in the app: <strong>Settings → Delete account</strong>. This permanently deletes your profile, posts, photos, likes, saves, friendships, blocks and username.</li>
+        <li>Reports you made or that were made about you may be kept for as long as needed to handle them and keep the community safe.</li>
+        <li>You can turn off location access at any time in your phone's Settings.</li>
+        <li>For any other request about your data, email us at the address above.</li>
+      </ul>
+
+      <h2>Children</h2>
+      <p>Coffee Dunk is not meant for children under 13, and we don't knowingly collect their data. If you believe a child under 13 has an account, contact us and we will delete it.</p>
+
+      <h2>Changes</h2>
+      <p>If we change this policy, we'll update the date at the top. Big changes will also be announced in the app.</p>
+    </main>
+  </body>
+</html>
