@@ -5,6 +5,7 @@ import { Avatar } from "@/components/Avatar";
 import { COLORS } from "@/constants/theme";
 import { useAuth } from "@/lib/AuthContext";
 import { auth } from "@/lib/firebase";
+import { CONTACT_EMAIL, openPage, PRIVACY_URL, TERMS_URL } from "@/lib/legal";
 import { fetchUserBio, refreshAuthorOnMyPosts } from "@/lib/posts";
 import { saveBio, saveProfilePhoto, saveUsername } from "@/lib/profile";
 import { USERNAME_MAX, usernameProblem, UsernameTakenError } from "@/lib/usernames";
@@ -16,6 +17,7 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -108,6 +110,16 @@ export default function SettingsScreen() {
     }
   }
 
+  // Opens the phone's email app with a new message to us. If there's no email
+  // app set up, show the address so they can still write to us.
+  async function contactUs() {
+    try {
+      await Linking.openURL(`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Coffee Dunk")}`);
+    } catch {
+      Alert.alert("Contact us", `Email us at ${CONTACT_EMAIL}`);
+    }
+  }
+
   function confirmLogOut() {
     Alert.alert("Log out?", undefined, [
       { text: "Cancel", style: "cancel" },
@@ -190,6 +202,14 @@ export default function SettingsScreen() {
           <Text style={styles.blockedText}>Blocked accounts</Text>
         </Pressable>
 
+        {/* About: the pages and contact details Apple requires to be easy to find */}
+        <Text style={styles.label}>About</Text>
+        <View style={styles.aboutCard}>
+          <AboutRow icon="document-text-outline" label="Terms of Use" onPress={() => openPage(TERMS_URL)} />
+          <AboutRow icon="shield-checkmark-outline" label="Privacy Policy" onPress={() => openPage(PRIVACY_URL)} divider />
+          <AboutRow icon="mail-outline" label="Contact us" detail={CONTACT_EMAIL} onPress={contactUs} divider />
+        </View>
+
         {/* Small and quiet on purpose - it's permanent */}
         <Pressable style={styles.deleteAccountButton} onPress={() => router.push("/delete-account")}>
           <Text style={styles.deleteAccountText}>Delete account</Text>
@@ -199,7 +219,70 @@ export default function SettingsScreen() {
   );
 }
 
+// One tappable line in the About card: icon, label, optional grey detail, arrow
+function AboutRow({
+  icon,
+  label,
+  detail,
+  onPress,
+  divider = false,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  detail?: string;
+  onPress: () => void;
+  divider?: boolean; // a thin line above (every row except the first)
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.aboutRow, divider && styles.aboutDivider, pressed && styles.aboutPressed]}
+    >
+      <Ionicons name={icon} size={20} color={COLORS.plum} />
+      <View style={styles.aboutTexts}>
+        <Text style={styles.aboutLabel}>{label}</Text>
+        {detail && <Text style={styles.aboutDetail}>{detail}</Text>}
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={COLORS.placeholder} />
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
+  aboutCard: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(125, 46, 77, 0.2)", // same outline as the text boxes above
+    overflow: "hidden", // keep the pressed highlight inside the rounded corners
+  },
+  aboutRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 14,
+    minHeight: 48, // comfortable to tap
+    paddingVertical: 10,
+  },
+  aboutDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(125, 46, 77, 0.2)",
+  },
+  aboutPressed: {
+    backgroundColor: "rgba(125, 46, 77, 0.06)",
+  },
+  aboutTexts: {
+    flex: 1,
+  },
+  aboutLabel: {
+    fontSize: 15,
+    color: COLORS.plum,
+  },
+  aboutDetail: {
+    fontSize: 13,
+    color: COLORS.placeholder,
+    marginTop: 1,
+  },
   screen: {
     flex: 1,
     backgroundColor: COLORS.card,
