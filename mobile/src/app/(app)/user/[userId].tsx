@@ -117,6 +117,29 @@ export default function UserProfileScreen() {
 
   const name = profile?.username ?? "";
 
+  function confirmUnfriend() {
+    if (!myId || !userId) return;
+    Alert.alert(`Remove ${name}?`, "You'll stop seeing each other's coffee.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () => act(() => removeFriendship(myId, userId)),
+      },
+    ]);
+  }
+
+  function openMenu() {
+    if (!myId || !userId) return;
+    openSafetyMenu({
+      myId,
+      otherId: userId,
+      otherName: name,
+      onBlocked: () => router.back(),
+      onUnfriend: isFriend ? confirmUnfriend : undefined,
+    });
+  }
+
   // Everything above the grid - scrolls together with the posts
   const header = (
     <View style={styles.headerArea}>
@@ -127,23 +150,6 @@ export default function UserProfileScreen() {
         <Text style={styles.username} numberOfLines={1}>
           {name}
         </Text>
-        {/* ⋯ -> Report / Block */}
-        {myId && userId && profile && (
-          <Pressable
-            onPress={() =>
-              openSafetyMenu({
-                myId,
-                otherId: userId,
-                otherName: name,
-                onBlocked: () => router.back(),
-              })
-            }
-            style={styles.backButton}
-            accessibilityLabel="More options"
-          >
-            <Ionicons name="ellipsis-horizontal" size={22} color={COLORS.plum} />
-          </Pressable>
-        )}
       </View>
 
       {isLoading ? (
@@ -156,7 +162,18 @@ export default function UserProfileScreen() {
             bio={bio}
           />
 
-          <FriendButton state={friendState} busy={isBusy} onPress={handleFriendButton} />
+          {/* The friend button, with a small ⋯ pill next to it for
+              Remove friend / Report / Block */}
+          <View style={styles.actionRow}>
+            <FriendButton state={friendState} busy={isBusy} onPress={handleFriendButton} />
+            <Pressable
+              onPress={openMenu}
+              style={styles.morePill}
+              accessibilityLabel={`More options for ${name}`}
+            >
+              <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.plum} />
+            </Pressable>
+          </View>
 
           {/* Not friends yet: a friendly locked message instead of their posts */}
           {!isFriend && (
@@ -258,8 +275,23 @@ const styles = StyleSheet.create({
   spinner: {
     marginTop: 32,
   },
-  friendButton: {
+  actionRow: {
+    flexDirection: "row",
+    gap: 8,
     marginTop: 16,
+  },
+  morePill: {
+    width: 44,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderWidth: 1,
+    borderColor: "rgba(125, 46, 77, 0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  friendButton: {
+    flex: 1, // takes the row's width, next to the ⋯ pill
     height: 40,
     borderRadius: 20,
     alignItems: "center",

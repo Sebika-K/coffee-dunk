@@ -1,5 +1,6 @@
 // Your friends: requests to answer, your friends, and requests you've sent.
 
+import { openSafetyMenu } from "@/components/SafetyMenu";
 import { COLORS } from "@/constants/theme";
 import { useAuth } from "@/lib/AuthContext";
 import { avatarSource } from "@/lib/format";
@@ -136,9 +137,17 @@ export default function FriendsScreen() {
               friends.map((person) => (
                 <PersonRow key={person.id} person={person} busy={busyId === person.id}>
                   <Pressable
-                    onPress={() => confirmUnfriend(person)}
+                    onPress={() =>
+                      openSafetyMenu({
+                        myId,
+                        otherId: person.id,
+                        otherName: person.username,
+                        onUnfriend: () => confirmUnfriend(person),
+                        onBlocked: load, // refresh the list - they're gone
+                      })
+                    }
                     hitSlop={8}
-                    accessibilityLabel={`Remove ${person.username}`}
+                    accessibilityLabel={`More options for ${person.username}`}
                   >
                     <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.placeholder} />
                   </Pressable>

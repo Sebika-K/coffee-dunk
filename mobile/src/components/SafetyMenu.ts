@@ -1,4 +1,5 @@
-// The "⋯" menu on someone else's post or profile: Report / Block.
+// The "⋯" menu for someone else: (Remove friend) / Report / Block.
+// Used on their profile, on their posts, and in your Friends list.
 // Built from the phone's own pop-up alerts, so it looks native on iOS and
 // Android - no custom menu component needed.
 
@@ -11,11 +12,13 @@ type Options = {
   otherName: string;
   postId?: string; // set when opened from a post -> "Report post"
   onBlocked: () => void; // e.g. leave the screen
+  onUnfriend?: () => void; // set when you're friends -> adds "Remove friend"
 };
 
 export function openSafetyMenu(options: Options) {
-  const { otherName, postId } = options;
+  const { otherName, postId, onUnfriend } = options;
   Alert.alert(otherName, undefined, [
+    ...(onUnfriend ? [{ text: "Remove friend", onPress: onUnfriend }] : []),
     { text: postId ? "Report post" : "Report", onPress: () => chooseReason(options) },
     { text: `Block ${otherName}`, style: "destructive", onPress: () => confirmBlock(options) },
     { text: "Cancel", style: "cancel" },
