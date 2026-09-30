@@ -1,0 +1,216 @@
+<!doctype html>
+<!--
+  Coffee Dunk - password reset page.
+
+  This is NOT a web version of the app. It's the one page the "reset your
+  password" email links to. Firebase adds ?mode=resetPassword&oobCode=... to
+  the link; this page checks that code, asks for a new password, and saves it.
+
+  Why our own page? Firebase's built-in page uses an old API key that was
+  deleted. This page uses a key WE choose (WEB_API_KEY below) instead.
+
+  Deploy (from the repo root):  firebase deploy --only hosting
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Reset password · Coffee Dunk</title>
+    <style>
+      :root {
+        --plum: #7d2e4d;
+        --latte: #cba781;
+        --cream: #fdf3e7;
+        --soft: rgba(252, 251, 251, 0.75);
+        --error: #ffd6d6;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        background: var(--latte);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      .card {
+        width: 100%;
+        max-width: 380px;
+        padding: 28px 24px;
+        border-radius: 22px;
+        background: var(--plum);
+        color: white;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      }
+      h1 {
+        margin: 0 0 6px;
+        font-size: 24px;
+      }
+      p {
+        margin: 0 0 18px;
+        color: var(--soft);
+        line-height: 1.4;
+      }
+      input {
+        width: 100%;
+        height: 48px;
+        margin-bottom: 12px;
+        padding: 0 14px;
+        border: none;
+        border-radius: 12px;
+        background: var(--cream);
+        color: var(--plum);
+        font-size: 16px; /* 16px stops iPhones zooming in on the box */
+      }
+      button {
+        width: 100%;
+        height: 48px;
+        border: none;
+        border-radius: 24px;
+        background: white;
+        color: var(--plum);
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .error {
+        margin: 0 0 12px;
+        color: var(--error);
+      }
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>☕ Coffee Dunk</h1>
+
+      <p id="loading">Checking your link…</p>
+
+      <form id="form" hidden>
+        <p>New password for <strong id="email"></strong></p>
+        <input
+          id="password"
+          type="password"
+          placeholder="New password (at least 6 characters)"
+          autocomplete="new-password"
+          minlength="6"
+          required
+        />
+        <input
+          id="confirm"
+          type="password"
+          placeholder="Type it again"
+          autocomplete="new-password"
+          minlength="6"
+          required
+        />
+        <p id="formError" class="error" hidden></p>
+        <button id="save" type="submit">Save new password</button>
+      </form>
+
+      <p id="message" hidden></p>
+    </main>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+      import {
+        confirmPasswordReset,
+        getAuth,
+        verifyPasswordResetCode,
+      } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+
+      const WEB_API_KEY = "AIzaSyBzoru7pCQhgr_TQEimXNwsJzDftysRzd4";
+
+      const auth = getAuth(
+        initializeApp({
+          apiKey: WEB_API_KEY,
+          authDomain: "coffee-dunk.firebaseapp.com",
+          projectId: "coffee-dunk",
+        }),
+      );
+
+      const $ = (id) => document.getElementById(id);
+
+      // Show one of the three parts of the page
+      function show(part) {
+        $("loading").hidden = part !== "loading";
+        $("form").hidden = part !== "form";
+        $("message").hidden = part !== "message";
+      }
+      function showMessage(text) {
+        $("message").textContent = text;
+        show("message");
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get("mode");
+      const code = params.get("oobCode");
+
+      const EXPIRED =
+        "This link has expired or was already used. " +
+        "In the app, tap “Forgot Password?” to get a new one.";
+
+      async function start() {
+        if (mode !== "resetPassword" || !code) {
+          showMessage(
+            "This link isn't a password reset link. Open Coffee Dunk on your phone.",
+          );
+          return;
+        }
+        try {
+          // Checks the code is real and not expired, and tells us whose it is
+          $("email").textContent = await verifyPasswordResetCode(auth, code);
+          show("form");
+          $("password").focus();
+        } catch (error) {
+          console.log("Reset code check failed:", error.code);
+          showMessage(EXPIRED);
+        }
+      }
+
+      $("form").addEventListener("submit", async (event) => {
+        event.preventDefault(); // stay on this page (don't reload it)
+        const password = $("password").value;
+        $("formError").hidden = true;
+
+        if (password !== $("confirm").value) {
+          $("formError").textContent = "The two passwords don't match.";
+          $("formError").hidden = false;
+          return;
+        }
+
+        $("save").disabled = true;
+        try {
+          await confirmPasswordReset(auth, code, password);
+          showMessage(
+            "Done! 🎉 Go back to the Coffee Dunk app and log in with your new password.",
+          );
+        } catch (error) {
+          console.log("Reset failed:", error.code);
+          if (error.code === "auth/weak-password") {
+            $("formError").textContent =
+              "Password must be at least 6 characters.";
+            $("formError").hidden = false;
+            $("save").disabled = false;
+          } else {
+            showMessage(EXPIRED);
+          }
+        }
+      });
+
+      start();
+    </script>
+  </body>
+</html>

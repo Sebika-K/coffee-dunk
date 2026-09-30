@@ -13,3 +13,7 @@ Icon?
 # Python cache files
 __pycache__/
 *.pyc
+
+# Firebase command-line tool cache
+.firebase/
+firebase-debug.log
