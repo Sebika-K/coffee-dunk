@@ -1,11 +1,10 @@
 // On YOUR post: who liked it. Only you can see this.
 
+import { Avatar } from "@/components/Avatar";
 import { COLORS } from "@/constants/theme";
-import { avatarSource } from "@/lib/format";
 import { PublicProfile } from "@/lib/friends";
 import { openUserProfile } from "@/lib/navigation";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type Props = {
@@ -27,7 +26,7 @@ export function LikedByList({ likers }: Props) {
           style={styles.row}
           onPress={() => openUserProfile(person.id, undefined)}
         >
-          <Image source={avatarSource(person.photo_url)} style={styles.avatar} />
+          <Avatar photoUrl={person.photo_url} name={person.username} size={30} />
           <Text style={styles.name} numberOfLines={1}>
             {person.username}
           </Text>
@@ -61,11 +60,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-  },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
   },
   name: {
     flex: 1,

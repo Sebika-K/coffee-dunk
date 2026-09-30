@@ -1,8 +1,9 @@
 // "Where your friends went": cafés from your friends' recent posts,
 // as a row of small cards you can swipe sideways (Phase 8.1c).
 
+import { Avatar } from "@/components/Avatar";
 import { COLORS } from "@/constants/theme";
-import { avatarSource, formatTimeAgo } from "@/lib/format";
+import { formatTimeAgo } from "@/lib/format";
 import { FriendCafe } from "@/lib/stats";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -49,10 +50,12 @@ export function FriendsCafes({ cafes }: Props) {
             {/* Up to 3 overlapping avatars + "sam & 2 others" */}
             <View style={styles.friendsRow}>
               {cafe.friends.slice(0, 3).map((friend, i) => (
-                <Image
+                <Avatar
                   key={i}
-                  source={avatarSource(friend.avatar)}
-                  style={[styles.avatar, i > 0 && styles.avatarOverlap]}
+                  photoUrl={friend.avatar}
+                  name={friend.name}
+                  size={20}
+                  style={[styles.avatarBorder, i > 0 && styles.avatarOverlap]}
                 />
               ))}
               <Text style={styles.friendsText} numberOfLines={1}>
@@ -117,10 +120,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  avatar: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+  avatarBorder: {
     borderWidth: 1.5,
     borderColor: "white",
   },

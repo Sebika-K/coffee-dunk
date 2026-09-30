@@ -1,12 +1,11 @@
 // Blocked accounts: everyone you've blocked, with an Unblock button.
 
+import { Avatar } from "@/components/Avatar";
 import { COLORS } from "@/constants/theme";
 import { useAuth } from "@/lib/AuthContext";
-import { avatarSource } from "@/lib/format";
 import { PublicProfile } from "@/lib/friends";
 import { fetchBlockedProfiles, unblockUser } from "@/lib/safety";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
@@ -65,7 +64,7 @@ export default function BlockedScreen() {
           }
           renderItem={({ item }) => (
             <View style={styles.row}>
-              <Image source={avatarSource(item.photo_url)} style={styles.avatar} />
+              <Avatar photoUrl={item.photo_url} name={item.username} size={44} />
               <Text style={styles.username} numberOfLines={1}>
                 {item.username}
               </Text>
@@ -128,11 +127,6 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 12,
     backgroundColor: "white",
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
   },
   username: {
     flex: 1,

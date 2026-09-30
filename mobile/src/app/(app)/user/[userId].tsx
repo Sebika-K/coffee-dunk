@@ -11,7 +11,6 @@ import { openSafetyMenu } from "@/components/SafetyMenu";
 import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
-import { avatarSource } from "@/lib/format";
 import {
   acceptFriendRequest,
   fetchProfile,
@@ -157,7 +156,8 @@ export default function UserProfileScreen() {
       ) : profile ? (
         <>
           <ProfileSummary
-            avatar={avatarSource(profile.photo_url)}
+            photoUrl={profile.photo_url}
+            name={name}
             stats={isFriend ? stats : null}
             bio={bio}
           />

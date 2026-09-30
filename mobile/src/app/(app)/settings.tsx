@@ -1,6 +1,7 @@
 // Settings: change your photo, username and bio, or log out.
 // One screen instead of the web app's four separate settings pages.
 
+import { Avatar } from "@/components/Avatar";
 import { COLORS } from "@/constants/theme";
 import { useAuth } from "@/lib/AuthContext";
 import { auth } from "@/lib/firebase";
@@ -9,7 +10,6 @@ import { saveBio, saveProfilePhoto, saveUsername } from "@/lib/profile";
 import { USERNAME_MAX, usernameProblem, UsernameTakenError } from "@/lib/usernames";
 import { Ionicons } from "@expo/vector-icons";
 import { signOut } from "firebase/auth";
-import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
@@ -116,11 +116,7 @@ export default function SettingsScreen() {
   }
 
   // Show the new photo if one was picked, otherwise the current one
-  const avatar = newPhotoUri
-    ? { uri: newPhotoUri }
-    : photoURL
-    ? { uri: photoURL }
-    : require("@/assets/images/default-avatar.jpg");
+  const avatarPhoto = newPhotoUri ?? photoURL;
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + 8 }]}>
@@ -149,7 +145,7 @@ export default function SettingsScreen() {
       >
         {/* Profile photo */}
         <Pressable style={styles.photoArea} onPress={handleChangePhoto} disabled={isSaving}>
-          <Image source={avatar} style={styles.avatar} contentFit="cover" />
+          <Avatar photoUrl={avatarPhoto} name={displayName} size={96} style={styles.avatarBorder} />
           <Text style={styles.changePhoto}>
             {photoChanged ? "New photo — tap Save to keep it" : "Change photo"}
           </Text>
@@ -252,10 +248,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 8,
   },
-  avatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+  avatarBorder: {
     borderWidth: 2,
     borderColor: "white",
   },

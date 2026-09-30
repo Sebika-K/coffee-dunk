@@ -3,20 +3,21 @@
 
 import { COLORS } from "@/constants/theme";
 import { DiaryStats, formatRating } from "@/lib/stats";
-import { Image, ImageSource } from "expo-image";
+import { Avatar } from "@/components/Avatar";
 import { StyleSheet, Text, View } from "react-native";
 
 type Props = {
-  avatar: ImageSource | number; // a { uri } or a require(...) image
+  photoUrl: string | null | undefined; // their photo, if any
+  name: string; // for the letter avatar when there is no photo
   stats: DiaryStats | null; // null = hide the numbers (e.g. not friends yet)
   bio: string;
 };
 
-export function ProfileSummary({ avatar, stats, bio }: Props) {
+export function ProfileSummary({ photoUrl, name, stats, bio }: Props) {
   return (
     <View>
       <View style={styles.profileRow}>
-        <Image source={avatar} style={styles.avatar} contentFit="cover" />
+        <Avatar photoUrl={photoUrl} name={name} size={84} style={styles.avatarBorder} />
         {stats && (
           <View style={styles.stats}>
             <Stat value={stats.totalPosts} label="POSTS" />
@@ -50,10 +51,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     gap: 16,
   },
-  avatar: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
+  avatarBorder: {
     borderWidth: 2,
     borderColor: "white",
   },

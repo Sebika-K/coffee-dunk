@@ -1,26 +1,23 @@
 // The floating bottom navigation pill (☕ feed, 🔍 search, your avatar),
 // rebuilt from the web app's nav-pill.css / nav-pill.js.
 
+import { Avatar } from "@/components/Avatar";
 import { COLORS, PILL } from "@/constants/theme";
 import { useKeyboardOpen } from "@/hooks/useKeyboardOpen";
 import { useAuth } from "@/lib/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function NavPill() {
-  const { photoURL } = useAuth();
+  const { photoURL, displayName } = useAuth();
   const pathname = usePathname(); // which screen we're on, e.g. "/search" or "/search/cafe/ChIJ…"
   const insets = useSafeAreaInsets(); // space taken by the iPhone home bar, notch, etc.
   const keyboardOpen = useKeyboardOpen();
 
   // Like the web version: hide the pill while typing
   if (keyboardOpen) return null;
-
-  const avatar = photoURL
-    ? { uri: photoURL }
-    : require("@/assets/images/default-avatar.jpg");
 
   return (
     <View style={[styles.pill, { bottom: insets.bottom + 12 }]}>
@@ -42,7 +39,7 @@ export function NavPill() {
         style={[styles.avatarButton, pathname === "/profile" && styles.activeAvatar]}
         accessibilityLabel="Profile"
       >
-        <Image source={avatar} style={styles.avatarImage} />
+        <Avatar photoUrl={photoURL} name={displayName} size={40} />
       </Pressable>
     </View>
   );
@@ -101,10 +98,6 @@ const styles = StyleSheet.create({
     overflow: "hidden", // crop the photo into a circle
     borderWidth: 2,
     borderColor: "transparent",
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
   },
   // Highlight for the screen you're currently on
   active: {

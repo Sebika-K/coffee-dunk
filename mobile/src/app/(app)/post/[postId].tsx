@@ -2,6 +2,7 @@
 // rating, café, caption. Replaces the old popup - there's more room here,
 // and every post has its own address: /post/<postId>
 
+import { Avatar } from "@/components/Avatar";
 import { DoubleTapHeart } from "@/components/DoubleTapHeart";
 import { LikeButton } from "@/components/LikeButton";
 import { LikedByList } from "@/components/LikedByList";
@@ -15,7 +16,7 @@ import { brewMethodLabel, describeDrink, tastingNoteLabel } from "@/constants/dr
 import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
-import { avatarSource, formatDate } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { openUserProfile } from "@/lib/navigation";
 import { deletePost, fetchPost } from "@/lib/posts";
 import { isPostSaved, savePost, unsavePost } from "@/lib/saved";
@@ -237,7 +238,7 @@ export default function PostScreen() {
             style={styles.userRow}
             hitSlop={6}
           >
-            <Image source={avatarSource(post.user_avatar)} style={styles.avatar} />
+            <Avatar photoUrl={post.user_avatar} name={post.user} size={34} />
             <Text style={styles.username}>{post.user ?? "Anon"}</Text>
             {post.created_at && <Text style={styles.date}>{formatDate(post.created_at)}</Text>}
           </Pressable>
@@ -342,11 +343,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-  },
-  avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
   },
   username: {
     flex: 1,

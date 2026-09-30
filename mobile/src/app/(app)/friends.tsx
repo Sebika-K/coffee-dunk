@@ -1,9 +1,9 @@
 // Your friends: requests to answer, your friends, and requests you've sent.
 
+import { Avatar } from "@/components/Avatar";
 import { openSafetyMenu } from "@/components/SafetyMenu";
 import { COLORS } from "@/constants/theme";
 import { useAuth } from "@/lib/AuthContext";
-import { avatarSource } from "@/lib/format";
 import {
   acceptFriendRequest,
   fetchMyFriends,
@@ -13,7 +13,6 @@ import {
 } from "@/lib/friends";
 import { openUserProfile } from "@/lib/navigation";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { router, useFocusEffect } from "expo-router";
 import { ReactNode, useCallback, useState } from "react";
 import {
@@ -201,7 +200,7 @@ function PersonRow({
     <View style={styles.row}>
       {/* Photo + name open their profile; the buttons on the right do their own thing */}
       <Pressable style={styles.person} onPress={() => openUserProfile(person.id, undefined)}>
-        <Image source={avatarSource(person.photo_url)} style={styles.avatar} />
+        <Avatar photoUrl={person.photo_url} name={person.username} size={44} />
         <Text style={styles.username} numberOfLines={1}>
           {person.username}
         </Text>
@@ -266,11 +265,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
   },
   username: {
     flex: 1,

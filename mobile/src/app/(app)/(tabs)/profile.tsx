@@ -74,9 +74,6 @@ export default function ProfileScreen() {
   const stats = useMemo(() => calculateStats(posts), [posts]);
 
   const name = displayName || user?.email?.split("@")[0] || "You";
-  const avatar = photoURL
-    ? { uri: photoURL }
-    : require("@/assets/images/default-avatar.jpg");
 
   // Everything above the grid - scrolls together with the posts
   const header = (
@@ -107,7 +104,7 @@ export default function ProfileScreen() {
         </Pressable>
       </View>
 
-      <ProfileSummary avatar={avatar} stats={stats} bio={bio} />
+      <ProfileSummary photoUrl={photoURL} name={name} stats={stats} bio={bio} />
 
       {!isLoading && posts.length > 0 && <DiaryCard stats={stats} />}
 

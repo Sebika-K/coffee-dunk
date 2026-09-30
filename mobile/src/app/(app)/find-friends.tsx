@@ -1,8 +1,8 @@
 // Find friends: search by username and send friend requests.
 
+import { Avatar } from "@/components/Avatar";
 import { COLORS } from "@/constants/theme";
 import { useAuth } from "@/lib/AuthContext";
-import { avatarSource } from "@/lib/format";
 import { openUserProfile } from "@/lib/navigation";
 import { fetchBlockedIds } from "@/lib/safety";
 import {
@@ -14,7 +14,6 @@ import {
   sendFriendRequest,
 } from "@/lib/friends";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -139,7 +138,7 @@ export default function FindFriendsScreen() {
           <View style={styles.row}>
             {/* Photo + name open their profile */}
             <Pressable style={styles.person} onPress={() => openUserProfile(item.id, undefined)}>
-              <Image source={avatarSource(item.photo_url)} style={styles.avatar} />
+              <Avatar photoUrl={item.photo_url} name={item.username} size={44} />
               <Text style={styles.username} numberOfLines={1}>
                 {item.username}
               </Text>
@@ -259,11 +258,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
   },
   username: {
     flex: 1,
