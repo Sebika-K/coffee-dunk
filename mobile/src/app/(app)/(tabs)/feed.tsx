@@ -118,7 +118,7 @@ export default function FeedScreen() {
   }
 
   const header = (
-    <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+    <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
       <Text style={styles.title}>Friends' coffee</Text>
       {errorMessage !== "" && <Text style={styles.message}>{errorMessage}</Text>}
     </View>
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   header: {
-    paddingBottom: 4,
+    paddingBottom: 12, // a little breathing room between the title and the first card
   },
   title: {
     fontSize: 24,

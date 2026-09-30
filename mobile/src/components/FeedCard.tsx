@@ -1,5 +1,6 @@
 // One post in the friends feed: photo first, then who / what / where.
 
+import { Avatar } from "@/components/Avatar";
 import { DoubleTapHeart } from "@/components/DoubleTapHeart";
 import { LikeButton } from "@/components/LikeButton";
 import { SaveButton } from "@/components/SaveButton";
@@ -8,7 +9,7 @@ import { brewMethodLabel, describeDrink, tastingNoteLabel } from "@/constants/dr
 import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
-import { avatarSource, formatTimeAgo } from "@/lib/format";
+import { formatTimeAgo } from "@/lib/format";
 import { openUserProfile } from "@/lib/navigation";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -54,7 +55,7 @@ export function FeedCard({
         style={styles.userRow}
         hitSlop={6}
       >
-        <Image source={avatarSource(post.user_avatar)} style={styles.avatar} />
+        <Avatar photoUrl={post.user_avatar} name={post.user} size={34} />
         <Text style={styles.username} numberOfLines={1}>
           {post.user ?? "Anon"}
         </Text>
@@ -164,11 +165,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-  },
-  avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
   },
   username: {
     flex: 1,
