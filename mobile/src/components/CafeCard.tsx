@@ -2,8 +2,9 @@
 
 import { COLORS } from "@/constants/theme";
 import { Cafe, cafePhotoUrl } from "@/lib/api";
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type Props = {
   cafe: Cafe;
@@ -27,7 +28,19 @@ export function CafeCard({ cafe, onPress }: Props) {
       <Text style={styles.name} numberOfLines={2}>
         {cafe.name}
       </Text>
-      <Text style={styles.rating}>{cafe.rating ?? "No rating"} ⭐</Text>
+
+      {/* The street, so two cafés with the same name can be told apart */}
+      {cafe.address && (
+        <Text style={styles.address} numberOfLines={1}>
+          {cafe.address}
+        </Text>
+      )}
+
+      {/* Plum star + number, matching the stars used on posts */}
+      <View style={styles.ratingRow}>
+        <Ionicons name="star" size={13} color={COLORS.plum} />
+        <Text style={styles.rating}>{cafe.rating ?? "No rating yet"}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -38,8 +51,7 @@ const styles = StyleSheet.create({
     maxWidth: "48%", // keeps a lone last card from stretching full width
     backgroundColor: COLORS.card,
     borderRadius: 15,
-    padding: 10,
-    alignItems: "center",
+    padding: 10, // text lines up on the left, like Google Maps / Yelp cards
     boxShadow: "2px 2px 6px rgba(0, 0, 0, 0.1)",
   },
   cardPressed: {
@@ -48,7 +60,7 @@ const styles = StyleSheet.create({
   },
   photo: {
     width: "100%",
-    aspectRatio: 168 / 203, // same shape as the web cards
+    aspectRatio: 4 / 3, // wider than tall, so more cafés fit on screen
     borderRadius: 12,
     backgroundColor: COLORS.sand, // shows while the photo loads
   },
@@ -56,13 +68,22 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontWeight: "700",
     color: COLORS.plum,
-    textAlign: "center",
+    fontSize: 15,
     lineHeight: 19,
-    minHeight: 38, // always 2 lines tall, so every card is the same height
+  },
+  address: {
+    marginTop: 2,
+    fontSize: 13,
+    color: "rgba(125, 46, 77, 0.6)", // faded plum: less important than the name
+  },
+  ratingRow: {
+    flexDirection: "row", // star and number side by side
+    alignItems: "center",
+    gap: 4,
+    marginTop: 6,
   },
   rating: {
-    marginTop: 2,
-    fontWeight: "700",
+    fontWeight: "600",
     fontSize: 13,
     color: COLORS.plum,
   },

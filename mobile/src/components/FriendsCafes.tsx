@@ -18,7 +18,7 @@ export function FriendsCafes({ cafes }: Props) {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.title}>☕ Where your friends went</Text>
+      <Text style={styles.title}>Where your friends went</Text>
 
       {/* horizontal = swipe sideways; the page itself still scrolls up and down */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
