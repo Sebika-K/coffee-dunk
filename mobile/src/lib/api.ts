@@ -180,3 +180,22 @@ export async function fetchRecommendations(user: User): Promise<Recommendations>
   if (!response.ok) throw new Error(`Server error (${response.status})`);
   return response.json();
 }
+
+// Delete my account and everything in it (posts, photos, likes, friends...).
+// The backend does the work - see backend/routes/account_routes.py.
+export async function deleteAccount(user: User): Promise<void> {
+  const token = await user.getIdToken();
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/api/account/delete`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    throw new Error("Can't reach the Coffee Dunk server. Is the backend running?");
+  }
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || `Server error (${response.status})`);
+  }
+}

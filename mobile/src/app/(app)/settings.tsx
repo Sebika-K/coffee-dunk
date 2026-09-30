@@ -189,6 +189,11 @@ export default function SettingsScreen() {
           <Ionicons name="log-out-outline" size={20} color={COLORS.plum} />
           <Text style={styles.logOutText}>Log out</Text>
         </Pressable>
+
+        {/* Small and quiet on purpose - it's permanent */}
+        <Pressable style={styles.deleteAccountButton} onPress={() => router.push("/delete-account")}>
+          <Text style={styles.deleteAccountText}>Delete account</Text>
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -297,6 +302,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "rgba(125, 46, 77, 0.3)",
+  },
+  deleteAccountButton: {
+    alignSelf: "center",
+    padding: 8,
+  },
+  deleteAccountText: {
+    color: COLORS.placeholder,
+    fontSize: 14,
+    textDecorationLine: "underline",
   },
   logOutText: {
     color: COLORS.plum,

@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request 
 from dotenv import load_dotenv
 from routes.cafe_routes import cafe_bp
+from routes.account_routes import account_bp
 from routes.firebase_helpers import get_posts_by_cafe
 import os
 
@@ -10,6 +11,7 @@ GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 app = Flask(__name__)
 
 app.register_blueprint(cafe_bp)
+app.register_blueprint(account_bp)
 
 @app.route('/')
 def home():
