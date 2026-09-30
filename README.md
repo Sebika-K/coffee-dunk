@@ -9,10 +9,6 @@ Log every cup, see what your friends are drinking, and find cafes worth the trip
 
 ---
 
-<p align="center">
-  <img src="docs/screenshots/demo.gif" alt="Coffee Dunk demo: feed, double-tap like, searching Austin, a café page and a new post" width="260" />
-</p>
-
 <table align="center">
   <tr>
     <td align="center"><img src="docs/screenshots/landing.jpg" width="200" alt="Landing screen" /><br/><sub>Welcome</sub></td>
@@ -20,13 +16,11 @@ Log every cup, see what your friends are drinking, and find cafes worth the trip
     <td align="center"><img src="docs/screenshots/feed.jpg" width="200" alt="Friends feed" /><br/><sub>Friends' coffee feed</sub></td>
     <td align="center"><img src="docs/screenshots/profile.jpg" width="200" alt="Profile with coffee diary" /><br/><sub>Profile & coffee diary</sub></td>
   </tr>
-</table>
-
-<table align="center">
   <tr>
     <td align="center"><img src="docs/screenshots/discover.jpg" width="200" alt="Discover cafés" /><br/><sub>Discover cafés</sub></td>
     <td align="center"><img src="docs/screenshots/cafe.jpg" width="200" alt="Café page" /><br/><sub>Café page</sub></td>
     <td align="center"><img src="docs/screenshots/new-post.jpg" width="200" alt="New post" /><br/><sub>Log a coffee</sub></td>
+    <td align="center"><img src="docs/screenshots/demo.gif" width="200" alt="Demo: feed, double-tap like, searching Austin, a café page and a new post" /><br/><sub>▶ See it in action</sub></td>
   </tr>
 </table>
 
