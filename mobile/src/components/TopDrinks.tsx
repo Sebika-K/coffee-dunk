@@ -16,7 +16,7 @@ export function TopDrinks({ drinks }: Props) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>☕ What to order here</Text>
+      <Text style={styles.title}>What to order here</Text>
 
       {drinks.map((drink, index) => (
         <View key={index} style={styles.row}>

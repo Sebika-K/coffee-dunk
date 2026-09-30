@@ -359,6 +359,60 @@ def api_cafe_posts(place_id):
     return jsonify({"place_id": place_id, "count": len(posts), "posts": posts})
 
 
+DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json"
+
+# Only ask Google for what the café page shows. Google charges Place Details
+# by which groups of fields you ask for, so fewer fields = cheaper.
+DETAILS_FIELDS = ",".join([
+    "name", "formatted_address", "geometry/location",   # which café, and where
+    "rating", "user_ratings_total", "photos",           # how it looks and rates
+    "current_opening_hours", "opening_hours",           # open now? weekly hours
+    "formatted_phone_number", "website", "url",         # call / website / Google Maps
+])
+
+
+@cafe_bp.route("/api/cafes/<place_id>/details")
+def api_cafe_details(place_id):
+    """
+    Everything the café page shows about ONE exact café, so people can tell
+    the many "Summer Moon"s apart.
+    Example: /api/cafes/ChIJOzVa9gSLj4ARFQqljssXWUI/details
+    """
+    try:
+        data = requests.get(
+            DETAILS_URL,
+            params={"place_id": place_id, "fields": DETAILS_FIELDS, "key": GOOGLE_API_KEY},
+            timeout=10,
+        ).json()
+    except requests.RequestException as e:
+        return jsonify({"error": "Could not reach Google", "detail": str(e)}), 502
+
+    if data.get("status") != "OK":
+        return jsonify({"error": data.get("error_message") or data.get("status")}), 502
+
+    place = data.get("result", {})
+    # "current_opening_hours" knows about holidays; fall back to the regular hours
+    hours = place.get("current_opening_hours") or place.get("opening_hours") or {}
+    location = (place.get("geometry") or {}).get("location") or {}
+    photos = place.get("photos")
+
+    return jsonify({
+        "place_id": place_id,
+        "name": place.get("name"),
+        "address": place.get("formatted_address"),
+        "latitude": location.get("lat"),
+        "longitude": location.get("lng"),
+        "rating": place.get("rating"),
+        "rating_count": place.get("user_ratings_total"),
+        "photo_ref": photos[0]["photo_reference"] if photos else None,
+        "open_now": hours.get("open_now"),          # True / False / None (unknown)
+        "weekly_hours": hours.get("weekday_text"),  # ["Monday: 7:00 AM – 6:00 PM", ...] or None
+        "phone": place.get("formatted_phone_number"),
+        "website": place.get("website"),
+        "maps_url": place.get("url"),               # this café on Google Maps
+    })
+
+
 @cafe_bp.route("/api/cafes/<place_id>/top-drinks")
 def api_cafe_top_drinks(place_id):
     """

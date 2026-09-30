@@ -7,6 +7,8 @@ import { Image } from "expo-image";
 import { ReactElement } from "react";
 import { FlatList, Pressable, StyleSheet, Text } from "react-native";
 
+const PLACEHOLDER = require("@/assets/images/cafe-placeholder.jpg");
+
 type Props = {
   posts: Post[];
   onPressPost: (post: Post) => void;
@@ -27,11 +29,12 @@ export function PostGrid({ posts, onPressPost, emptyText, header }: Props) {
       renderItem={({ item }) => (
         <Pressable style={styles.postCard} onPress={() => onPressPost(item)}>
           <Image
-            source={
-              item.image_url
-                ? { uri: item.image_url }
-                : require("@/assets/images/cafe-placeholder.jpg")
-            }
+            // Only real web links are photos (a very old post may hold a website path)
+            source={item.image_url?.startsWith("http") ? { uri: item.image_url } : PLACEHOLDER}
+            // Shown while the photo loads - and it stays if the photo can't load,
+            // so a broken photo shows the placeholder instead of an empty white tile
+            placeholder={PLACEHOLDER}
+            placeholderContentFit="cover"
             style={styles.postImage}
             contentFit="cover"
             transition={200}

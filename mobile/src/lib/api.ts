@@ -190,6 +190,31 @@ export type TopDrink = {
   score: number; // the confidence-weighted score - what the backend RANKED by
 };
 
+// Everything about ONE exact café (from Google Place Details), so people
+// can tell the many "Summer Moon"s apart. Missing things come back as null.
+export type CafeDetails = {
+  place_id: string;
+  name: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  rating: number | null;
+  rating_count: number | null;
+  photo_ref: string | null;
+  open_now: boolean | null; // null = Google doesn't know
+  weekly_hours: string[] | null; // ["Monday: 7:00 AM – 6:00 PM", ...]
+  phone: string | null;
+  website: string | null;
+  maps_url: string | null;
+};
+
+export async function fetchCafeDetails(placeId: string): Promise<CafeDetails> {
+  const url = `${API_URL}/api/cafes/${encodeURIComponent(placeId)}/details`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Server error (${response.status})`);
+  return response.json();
+}
+
 // Ask the backend for a café's top drinks (best first)
 export async function fetchTopDrinks(placeId: string): Promise<TopDrink[]> {
   const url = `${API_URL}/api/cafes/${encodeURIComponent(placeId)}/top-drinks`;

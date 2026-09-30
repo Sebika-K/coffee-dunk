@@ -1,16 +1,18 @@
-// One café's page: its name, top drinks, and a grid of YOUR + your FRIENDS' posts there.
+// One café's page: its details (photo, address, hours, directions...), top drinks,
+// and a grid of YOUR + your FRIENDS' posts there.
 // The [placeId] in the file name means this screen works for ANY café -
 // the id comes from the address, e.g. /search/cafe/ChIJOzVa9gSLj4ARFQqljssXWUI
 
+import { CafeInfo } from "@/components/CafeInfo";
 import { PostGrid } from "@/components/PostGrid";
 import { TopDrinks } from "@/components/TopDrinks";
 import { COLORS } from "@/constants/theme";
-import { fetchCafePosts, fetchTopDrinks, Post, TopDrink } from "@/lib/api";
+import { CafeDetails, fetchCafeDetails, fetchCafePosts, fetchTopDrinks, Post, TopDrink } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { User } from "firebase/auth";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   ImageBackground,
@@ -31,6 +33,21 @@ export default function CafeScreen() {
   const [topDrinks, setTopDrinks] = useState<TopDrink[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [details, setDetails] = useState<CafeDetails | null>(null);
+
+  // The café's details from Google. Loaded once (they don't change while you're
+  // here), separately from the posts, so a slow or failed answer never hides the posts.
+  useEffect(() => {
+    let isActive = true;
+    fetchCafeDetails(placeId)
+      .then((result) => {
+        if (isActive) setDetails(result);
+      })
+      .catch((error) => console.log("Café details failed:", error)); // the page still works with just the name
+    return () => {
+      isActive = false;
+    };
+  }, [placeId]);
 
   // Load the posts whenever this screen comes into view - when it first opens,
   // AND when you come back to it (e.g. after posting, so your new post shows up)
@@ -73,29 +90,34 @@ export default function CafeScreen() {
       style={styles.background}
       resizeMode="cover"
     >
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Back">
-          <Ionicons name="chevron-back" size={24} color={COLORS.plum} />
-        </Pressable>
-        <Text style={styles.title} numberOfLines={2}>
-          ~ {name ?? "Café"} ~
-        </Text>
-      </View>
+      <PostGrid
+        posts={posts}
+        onPressPost={(post) => router.push({ pathname: "/post/[postId]", params: { postId: post.id } })}
+        emptyText={isLoading || errorMessage !== "" ? "" : "No posts from you or your friends here yet. Be the first!"}
+        header={
+          // Everything above the grid scrolls together with it
+          <View style={{ paddingTop: insets.top - 8 }}>
+            <CafeInfo name={name ?? "Café"} details={details} />
+            <TopDrinks drinks={topDrinks} />
+            {posts.length > 0 && (
+              <Text style={styles.sectionTitle}>
+                From you & your friends · {posts.length}
+              </Text>
+            )}
+            {isLoading && <ActivityIndicator color={COLORS.plum} style={styles.spinner} />}
+            {errorMessage !== "" && <Text style={styles.message}>{errorMessage}</Text>}
+          </View>
+        }
+      />
 
-      {isLoading ? (
-        <ActivityIndicator color={COLORS.plum} style={styles.spinner} />
-      ) : errorMessage !== "" ? (
-        <Text style={styles.message}>{errorMessage}</Text>
-      ) : (
-        <PostGrid
-          posts={posts}
-          onPressPost={(post) =>
-            router.push({ pathname: "/post/[postId]", params: { postId: post.id } })
-          }
-          emptyText="No posts from you or your friends here yet. Be the first!"
-          header={<TopDrinks drinks={topDrinks} />}
-        />
-      )}
+      {/* Back button floats over the photo and stays put while you scroll */}
+      <Pressable
+        onPress={() => router.back()}
+        style={[styles.backButton, { top: insets.top + 16 }]}
+        accessibilityLabel="Back"
+      >
+        <Ionicons name="chevron-back" size={22} color={COLORS.plum} />
+      </Pressable>
 
       {/* Floating "+" button: post at this café */}
       <Pressable
@@ -113,42 +135,30 @@ const styles = StyleSheet.create({
   background: {
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    gap: 12,
-  },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    position: "absolute",
+    left: 28, // inside the photo's corner (16 page margin + 12)
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: COLORS.cream,
     alignItems: "center",
     justifyContent: "center",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
   },
-  title: {
-    flex: 1,
-    textAlign: "center",
-    marginRight: 52, // balance the back button so the title stays centred
-    backgroundColor: "rgba(255, 255, 255, 0.7)",
-    borderRadius: 10,
-    overflow: "hidden",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+  sectionTitle: {
+    fontSize: 17,
     fontWeight: "700",
-    fontSize: 18,
     color: COLORS.plum,
+    marginBottom: 12,
   },
   spinner: {
-    marginTop: 40,
+    marginTop: 24,
   },
   message: {
     textAlign: "center",
     color: COLORS.plum,
-    marginTop: 40,
-    paddingHorizontal: 24,
+    marginTop: 24,
   },
   addButton: {
     position: "absolute",
