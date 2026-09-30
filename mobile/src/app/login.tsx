@@ -49,7 +49,7 @@ export default function LoginScreen() {
 
   async function handleForgotPassword() {
     if (email.trim() === "") {
-      setErrorMessage("Type your email above first, then tap Forgot Password.");
+      setErrorMessage("Type your email above first, then tap Forgot password.");
       return;
     }
     try {
@@ -76,6 +76,8 @@ export default function LoginScreen() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           <View style={styles.card}>
+            <Text style={styles.title}>Welcome back</Text>
+
             <TextInput
               style={[styles.input, styles.emailInput]}
               placeholder="Email"
@@ -100,7 +102,7 @@ export default function LoginScreen() {
             {errorMessage !== "" && <Text style={styles.errorText}>{errorMessage}</Text>}
 
             <Pressable style={styles.forgotButton} onPress={handleForgotPassword}>
-              <Text style={styles.linkText}>Forgot Password?</Text>
+              <Text style={styles.linkText}>Forgot password?</Text>
             </Pressable>
 
             <Pressable
@@ -112,14 +114,14 @@ export default function LoginScreen() {
                 !canSubmit && styles.loginButtonDisabled,
               ]}
             >
-              <Text style={styles.loginButtonText}>{isLoading ? "Logging in…" : "Login"}</Text>
+              <Text style={styles.loginButtonText}>{isLoading ? "Logging in…" : "Log in"}</Text>
             </Pressable>
 
             <View style={styles.signupRow}>
               <Text style={styles.fadedText}>Don't have an account? </Text>
               {/* replace: swap this screen for Sign Up instead of stacking on top */}
               <Link href="/signup" replace>
-                <Text style={styles.linkText}>Sign Up</Text>
+                <Text style={styles.linkText}>Sign up</Text>
               </Link>
             </View>
           </View>
@@ -145,19 +147,26 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.plum,
     width: "85%",
     maxWidth: 340,
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 16,
+    padding: 24,
+  },
+  title: {
+    color: "#FFFFFF",
+    fontSize: 24,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 24,
   },
   input: {
     height: 48,
+    borderRadius: 12, // rounded to match the card
     backgroundColor: COLORS.sand,
     paddingHorizontal: 12,
     fontSize: 16,
     color: COLORS.plum,
   },
   emailInput: {
-    marginTop: 30,
-    marginBottom: 20,
+    marginBottom: 14,
   },
   errorText: {
     color: COLORS.error,
@@ -167,38 +176,38 @@ const styles = StyleSheet.create({
   forgotButton: {
     alignSelf: "flex-end", // push to the right edge of the card
     marginTop: 10,
-    marginBottom: 25,
+    marginBottom: 20,
+    paddingVertical: 4, // a bit more room for the finger
   },
   linkText: {
-    color: COLORS.link,
+    color: "#FFFFFF", // readable on plum (the old bright blue clashed)
     fontSize: 14,
+    fontWeight: "600",
     textDecorationLine: "underline",
   },
   loginButton: {
-    alignSelf: "center",
-    minWidth: 122,
-    paddingHorizontal: 12,
-    height: 44,
-    borderWidth: 1,
-    borderColor: COLORS.sand,
+    height: 52, // full width of the card (no alignSelf), pill shaped
+    borderRadius: 26,
+    backgroundColor: COLORS.cream,
     justifyContent: "center",
     alignItems: "center",
   },
   loginButtonPressed: {
-    backgroundColor: "rgba(216, 208, 203, 0.15)", // subtle feedback while pressed
+    opacity: 0.8, // small feedback while pressed
   },
   loginButtonDisabled: {
-    opacity: 0.4, // faded until both fields are filled in
+    opacity: 0.5, // faded until both fields are filled in
   },
   loginButtonText: {
-    color: COLORS.fadedWhite,
-    fontSize: 18,
+    color: COLORS.plum,
+    fontSize: 17,
+    fontWeight: "600",
   },
   signupRow: {
     flexDirection: "row", // put the two texts side by side
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 25,
+    marginTop: 20,
   },
   fadedText: {
     color: COLORS.fadedWhite,
