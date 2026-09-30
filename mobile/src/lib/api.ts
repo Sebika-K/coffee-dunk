@@ -30,18 +30,30 @@ export type Cafe = {
   photo_ref: string | null;
 };
 
+// One batch of search results (up to 20 cafés), plus a "ticket" to ask for
+// the next batch. nextPageToken is null when there are no more cafés.
+export type CafePage = {
+  cafes: Cafe[];
+  nextPageToken: string | null;
+};
+
 // Ask the backend for cafés near a city
-export async function fetchNearbyCafes(city: string): Promise<Cafe[]> {
+export async function fetchNearbyCafes(city: string): Promise<CafePage> {
   return fetchCafes(`${API_URL}/api/cafes/nearby?city=${encodeURIComponent(city)}`);
 }
 
 // Ask the backend for cafés near a map point - the phone's location ("Near me")
-export async function fetchCafesNearPoint(latitude: number, longitude: number): Promise<Cafe[]> {
+export async function fetchCafesNearPoint(latitude: number, longitude: number): Promise<CafePage> {
   return fetchCafes(`${API_URL}/api/cafes/nearby?lat=${latitude}&lng=${longitude}`);
 }
 
-// Shared by both searches above
-async function fetchCafes(url: string): Promise<Cafe[]> {
+// The next batch of a search already started (used while scrolling)
+export async function fetchMoreCafes(pageToken: string): Promise<CafePage> {
+  return fetchCafes(`${API_URL}/api/cafes/nearby?page_token=${encodeURIComponent(pageToken)}`);
+}
+
+// Shared by all three searches above
+async function fetchCafes(url: string): Promise<CafePage> {
   let response: Response;
   try {
     response = await fetch(url);
@@ -55,7 +67,7 @@ async function fetchCafes(url: string): Promise<Cafe[]> {
     // Our backend sends { "error": "..." } with 400 / 502 codes (step 1.2)
     throw new Error(data.error || `Server error (${response.status})`);
   }
-  return data.cafes;
+  return { cafes: data.cafes, nextPageToken: data.next_page_token ?? null };
 }
 
 // Build the address of a café photo. It goes through OUR backend's

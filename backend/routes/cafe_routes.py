@@ -1,4 +1,5 @@
 import os
+import time
 import requests
 from flask import Blueprint, request, jsonify, Response
 from .firebase_helpers import get_posts_by_place_id, get_posts_by_user, get_posts_by_drink, get_friend_ids
@@ -25,15 +26,14 @@ def find_cafes_near_city(city, radius):
     Used by /api/cafes/nearby. Turns a city name into coordinates, then asks
     Google for cafés around that point.
 
-    Returns (cafes, error). If something goes wrong, cafes is [] and
-    error explains why; otherwise error is None.
+    Returns (cafes, next_page_token, error) - see ask_google_nearby below.
     """
     # City name -> latitude/longitude
     geo = requests.get(
         GEOCODE_URL, params={"address": city, "key": GOOGLE_API_KEY}, timeout=10
     ).json()
     if geo.get("status") != "OK":
-        return [], geo.get("error_message") or geo.get("status")
+        return [], None, geo.get("error_message") or geo.get("status")
 
     location = geo["results"][0]["geometry"]["location"]
     return find_cafes_near_point(location["lat"], location["lng"], radius)
@@ -43,21 +43,43 @@ def find_cafes_near_point(lat, lng, radius):
     """
     Cafés around a map point (latitude, longitude). Used for a searched city
     (after turning its name into a point) and for "Near me" (the phone's
-    own location, Phase 8.1d). Returns (cafes, error) like above.
+    own location, Phase 8.1d).
+    """
+    return ask_google_nearby({
+        "location": f"{lat},{lng}",
+        "radius": radius,
+        "type": "cafe",
+        "keyword": "coffee",
+    })
+
+
+def find_more_cafes(page_token):
+    """
+    The next 20 cafés of a search we already started. Google gives a
+    "next page" ticket with each batch (up to 3 batches = 60 cafés).
+
+    Google needs a moment before a new ticket works; if we ask too soon it
+    says INVALID_REQUEST. So if that happens, wait 2 seconds and try once more.
+    """
+    cafes, next_token, error = ask_google_nearby({"pagetoken": page_token})
+    if error == "INVALID_REQUEST":
+        time.sleep(2)
+        cafes, next_token, error = ask_google_nearby({"pagetoken": page_token})
+    return cafes, next_token, error
+
+
+def ask_google_nearby(params):
+    """
+    One request to Google's Nearby Search. Returns (cafes, next_page_token, error):
+      - cafes: up to 20, best first
+      - next_page_token: ticket for the next 20, or None if there are no more
+      - error: None if it worked, otherwise Google's reason
     """
     places = requests.get(
-        NEARBY_URL,
-        params={
-            "location": f"{lat},{lng}",
-            "radius": radius,
-            "type": "cafe",
-            "keyword": "coffee",
-            "key": GOOGLE_API_KEY,
-        },
-        timeout=10,
+        NEARBY_URL, params={**params, "key": GOOGLE_API_KEY}, timeout=10
     ).json()
     if places.get("status") not in ("OK", "ZERO_RESULTS"):
-        return [], places.get("error_message") or places.get("status")
+        return [], None, places.get("error_message") or places.get("status")
 
     # Keep only the fields our app uses
     cafes = []
@@ -75,40 +97,52 @@ def find_cafes_near_point(lat, lng, radius):
     # Best first, counting how many reviews each rating is based on
     # (see ranking.py). Cafés with no rating go last.
     sort_top_rated(cafes)
-    return cafes, None
+    return cafes, places.get("next_page_token"), None
 
 
 @cafe_bp.route("/api/cafes/nearby")
 def api_cafes_nearby():
     """
     Mobile app version: same search, but returns plain JSON data.
-    Two ways to say WHERE:
+    Three ways to ask:
       /api/cafes/nearby?city=Austin&radius=5000
       /api/cafes/nearby?lat=30.27&lng=-97.74     ("Near me", Phase 8.1d)
+      /api/cafes/nearby?page_token=...           (the next 20 of a search, while scrolling)
+    Every answer includes "next_page_token" (null when there are no more cafés).
     """
+    page_token = (request.args.get("page_token") or "").strip()
     city = (request.args.get("city") or "").strip()
     has_point = request.args.get("lat") is not None or request.args.get("lng") is not None
     point = parse_coordinates(request.args.get("lat"), request.args.get("lng")) if has_point else None
 
-    if has_point and point is None:
-        return jsonify({"error": "Invalid location. Use ?lat=...&lng=... with real coordinates."}), 400
-    if not city and point is None:
-        return jsonify({"error": "Missing city. Use ?city=... (or ?lat=...&lng=...)"}), 400
+    if not page_token:
+        if has_point and point is None:
+            return jsonify({"error": "Invalid location. Use ?lat=...&lng=... with real coordinates."}), 400
+        if not city and point is None:
+            return jsonify({"error": "Missing city. Use ?city=... (or ?lat=...&lng=...)"}), 400
 
     radius = parse_radius(request.args.get("radius"))
 
     try:
-        if point is not None:
-            cafes, error = find_cafes_near_point(point[0], point[1], radius)
+        if page_token:
+            cafes, next_token, error = find_more_cafes(page_token)
+        elif point is not None:
+            cafes, next_token, error = find_cafes_near_point(point[0], point[1], radius)
         else:
-            cafes, error = find_cafes_near_city(city, radius)
+            cafes, next_token, error = find_cafes_near_city(city, radius)
     except requests.RequestException as e:
         return jsonify({"error": "Could not reach Google", "detail": str(e)}), 502
 
     if error:
         return jsonify({"error": error}), 502
 
-    return jsonify({"city": city, "radius": radius, "count": len(cafes), "cafes": cafes})
+    return jsonify({
+        "city": city,
+        "radius": radius,
+        "count": len(cafes),
+        "cafes": cafes,
+        "next_page_token": next_token,
+    })
 
 
 PHOTO_URL = "https://maps.googleapis.com/maps/api/place/photo"

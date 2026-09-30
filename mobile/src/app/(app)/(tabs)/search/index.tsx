@@ -13,7 +13,9 @@ import { SearchBar } from "@/components/SearchBar";
 import { COLORS } from "@/constants/theme";
 import {
   Cafe,
+  CafePage,
   fetchCafesNearPoint,
+  fetchMoreCafes,
   fetchNearbyCafes,
   fetchRecommendations,
   Recommendations,
@@ -45,6 +47,9 @@ export default function DiscoverScreen() {
   const [city, setCity] = useState("");
   const [cafes, setCafes] = useState<Cafe[] | null>(null); // null = haven't searched yet
   const [isLoading, setIsLoading] = useState(false);
+  // Ticket for the next 20 cafés of the current search (null = no more)
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false); // spinner at the bottom of the list
   const [errorMessage, setErrorMessage] = useState("");
   const [resultsTitle, setResultsTitle] = useState(""); // e.g. "Cafés near you"
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
@@ -84,13 +89,15 @@ export default function DiscoverScreen() {
   }, []);
 
   // Shared by every kind of search: show a spinner, run it, show results or an error
-  async function runSearch(title: string, search: () => Promise<Cafe[]>) {
+  async function runSearch(title: string, search: () => Promise<CafePage>) {
     if (isLoading) return;
     Keyboard.dismiss(); // put the keyboard away so the results are visible
     setErrorMessage("");
     setIsLoading(true);
     try {
-      setCafes(await search());
+      const page = await search();
+      setCafes(page.cafes);
+      setNextPageToken(page.nextPageToken);
       setResultsTitle(title);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Something went wrong.");
@@ -126,6 +133,29 @@ export default function DiscoverScreen() {
         (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
       return fetchCafesNearPoint(position.coords.latitude, position.coords.longitude);
     });
+  }
+
+  // Near the bottom of the list: fetch the next 20 cafés and add them on.
+  // Google allows 3 batches (60 cafés) per search, then nextPageToken is null.
+  async function loadMore() {
+    if (!nextPageToken || isLoadingMore || isLoading) return;
+    setIsLoadingMore(true);
+    try {
+      const page = await fetchMoreCafes(nextPageToken);
+      setCafes((current) => {
+        // Skip any café we already show (Google occasionally repeats one)
+        const shown = new Set((current ?? []).map((cafe) => cafe.place_id));
+        return [...(current ?? []), ...page.cafes.filter((cafe) => !shown.has(cafe.place_id))];
+      });
+      setNextPageToken(page.nextPageToken);
+    } catch (error) {
+      // Not worth an error message: the cafés already shown are still fine.
+      // Stop trying, so we don't keep failing while they scroll.
+      console.log("Loading more cafés failed:", error);
+      setNextPageToken(null);
+    } finally {
+      setIsLoadingMore(false);
+    }
   }
 
   async function handleClearRecent() {
@@ -214,6 +244,11 @@ export default function DiscoverScreen() {
         contentContainerStyle={styles.list}
         keyboardDismissMode="on-drag" // scrolling puts the keyboard away
         ListEmptyComponent={<Text style={styles.emptyText}>No cafés found here. Try another search.</Text>}
+        onEndReached={loadMore} // called when you scroll near the bottom
+        onEndReachedThreshold={0.5} // "near" = within half a screen of the end
+        ListFooterComponent={
+          isLoadingMore ? <ActivityIndicator color={COLORS.plum} style={styles.loadMoreSpinner} /> : null
+        }
         renderItem={({ item }) => (
           <CafeCard
             cafe={item}
@@ -232,6 +267,9 @@ export default function DiscoverScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadMoreSpinner: {
+    marginVertical: 20,
+  },
   // Discover home
   home: {
     flex: 1,
