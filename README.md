@@ -9,6 +9,23 @@ Log every cup, see what your friends are drinking, and find cafes worth the trip
 
 ---
 
+<p align="center">
+  <img src="docs/screenshots/demo.gif" alt="Coffee Dunk demo: feed, double-tap like, searching Austin, a café page and a new post" width="260" />
+</p>
+
+<table align="center">
+  <tr>
+    <td align="center"><img src="docs/screenshots/landing.jpg" width="220" alt="Landing screen" /><br/><sub>Welcome</sub></td>
+    <td align="center"><img src="docs/screenshots/feed.jpg" width="220" alt="Friends feed" /><br/><sub>Friends' coffee feed</sub></td>
+    <td align="center"><img src="docs/screenshots/profile.jpg" width="220" alt="Profile with coffee diary" /><br/><sub>Profile & coffee diary</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/discover.jpg" width="220" alt="Discover cafés" /><br/><sub>Discover cafés</sub></td>
+    <td align="center"><img src="docs/screenshots/cafe.jpg" width="220" alt="Café page" /><br/><sub>Café page</sub></td>
+    <td align="center"><img src="docs/screenshots/new-post.jpg" width="220" alt="New post" /><br/><sub>Log a coffee</sub></td>
+  </tr>
+</table>
+
 ## What it does
 
 - **Coffee journal:** post a photo of your drink with the drink, milk, hot or iced, tasting notes and a star rating. Posts are either at a café or homemade, with a step-by-step recipe.
