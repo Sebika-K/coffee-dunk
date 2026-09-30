@@ -70,6 +70,21 @@ export async function fetchCitySuggestions(query: string, sessionToken: string):
   return data.suggestions;
 }
 
+// Café suggestions while typing (choosing the café for a post). If we know
+// where the phone is, pass it so nearby cafés are suggested first.
+export async function fetchCafeSuggestions(
+  query: string,
+  sessionToken: string,
+  near: { latitude: number; longitude: number } | null
+): Promise<PlaceSuggestion[]> {
+  let url = `${API_URL}/api/places/autocomplete?kind=cafes&q=${encodeURIComponent(query)}&session=${sessionToken}`;
+  if (near) url += `&lat=${near.latitude}&lng=${near.longitude}`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Suggestions failed (${response.status})`);
+  const data = await response.json();
+  return data.suggestions;
+}
+
 // Shared by all three searches above
 async function fetchCafes(url: string): Promise<CafePage> {
   let response: Response;

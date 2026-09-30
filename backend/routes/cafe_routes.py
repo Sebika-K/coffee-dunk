@@ -148,11 +148,25 @@ def api_cafes_nearby():
 AUTOCOMPLETE_URL = "https://maps.googleapis.com/maps/api/place/autocomplete/json"
 
 
+# Google "types" that can serve coffee. Many coffee shops are listed as
+# "bakery", "restaurant" or just "food" rather than "cafe", so keep them all.
+FOOD_TYPES = {"cafe", "bakery", "restaurant", "food", "meal_takeaway", "bar"}
+
+
+def is_food_place(types):
+    """True if any of a place's Google types is one that can serve coffee."""
+    return bool(FOOD_TYPES.intersection(types or []))
+
+
 @cafe_bp.route("/api/places/autocomplete")
 def api_places_autocomplete():
     """
-    Suggestions while someone types, e.g. "Dal" -> Dallas, TX / Dalhart, TX.
+    Suggestions while someone types. Two kinds:
       /api/places/autocomplete?q=Dal&session=abc123
+          cities (Discover search): "Dal" -> Dallas, TX / Dalhart, TX
+      /api/places/autocomplete?q=Mozart&kind=cafes&lat=30.27&lng=-97.74&session=abc123
+          cafés (choosing the café for a post). lat/lng are optional: when the
+          app knows where the phone is, nearby cafés come first.
 
     "session" is a random id the app makes when someone starts typing and
     changes after they pick a suggestion. Google groups every keystroke with the
@@ -163,7 +177,19 @@ def api_places_autocomplete():
         # Too short to be useful (and saves a paid request)
         return jsonify({"suggestions": []})
 
-    params = {"input": q, "types": "(cities)", "key": GOOGLE_API_KEY}
+    kind = request.args.get("kind") or "cities"
+    params = {"input": q, "key": GOOGLE_API_KEY}
+    if kind == "cafes":
+        # Google can't limit suggestions to cafés, only to "businesses".
+        # We ask for businesses and filter out non-food ones below.
+        params["types"] = "establishment"
+        point = parse_coordinates(request.args.get("lat"), request.args.get("lng"))
+        if point is not None:
+            params["location"] = f"{point[0]},{point[1]}"
+            params["radius"] = 50000  # prefer places within ~50 km (not a hard limit)
+    else:
+        params["types"] = "(cities)"
+
     session = (request.args.get("session") or "").strip()
     if session:
         params["sessiontoken"] = session
@@ -179,6 +205,8 @@ def api_places_autocomplete():
     # Keep only what the app shows: "Dallas" in bold, "TX, USA" underneath
     suggestions = []
     for p in data.get("predictions", []):
+        if kind == "cafes" and not is_food_place(p.get("types")):
+            continue  # e.g. a bank or a gym with a matching name
         parts = p.get("structured_formatting") or {}
         suggestions.append({
             "description": p.get("description"),           # "Dallas, TX, USA"
