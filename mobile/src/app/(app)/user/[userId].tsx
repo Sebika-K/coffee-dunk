@@ -5,6 +5,7 @@
 // Until then you see who they are + a button to add them.
 // Their coffee diary is PRIVATE - it only ever shows on your own Profile tab.
 
+import { BeanBackground } from "@/components/BeanBackground";
 import { PostGrid } from "@/components/PostGrid";
 import { ProfileSummary } from "@/components/ProfileSummary";
 import { openSafetyMenu } from "@/components/SafetyMenu";
@@ -28,7 +29,6 @@ import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  ImageBackground,
   Pressable,
   StyleSheet,
   Text,
@@ -194,11 +194,7 @@ export default function UserProfileScreen() {
   );
 
   return (
-    <ImageBackground
-      source={require("@/assets/images/background_screen.png")}
-      style={styles.background}
-      resizeMode="cover"
-    >
+    <BeanBackground style={styles.background}>
       <PostGrid
         posts={posts}
         onPressPost={(post) =>
@@ -207,7 +203,7 @@ export default function UserProfileScreen() {
         header={header}
         emptyText={isLoading || !isFriend ? "" : `${name} hasn't posted any coffee yet.`}
       />
-    </ImageBackground>
+    </BeanBackground>
   );
 }
 

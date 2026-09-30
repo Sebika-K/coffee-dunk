@@ -49,16 +49,19 @@ const LAYOUT = [
   { bean: 5, x: 64, y: 96, size: 26, rotate: -70 },
 ];
 
-const BEAN_OPACITY = 0.35; // how faded the beans are (0 = invisible, 1 = full colour)
+const BEAN_OPACITY = 0.55; // how faded the beans are (0 = invisible, 1 = full colour)
 
-const FLOAT_DISTANCE = 8; // how far each bean drifts up and down, in points
+const FLOAT_DISTANCE = 14; // how far each bean drifts up and down, in points
 
 type Props = {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
+  // Optional: how faded the beans are on THIS screen (1 = full colour).
+  // Leave it out to use the normal BEAN_OPACITY.
+  beanOpacity?: number;
 };
 
-export function BeanBackground({ children, style }: Props) {
+export function BeanBackground({ children, style, beanOpacity = BEAN_OPACITY }: Props) {
   // Some people turn on "Reduce Motion" in their phone's accessibility settings
   // because movement makes them feel unwell. If it's on, the beans stay still.
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -74,7 +77,7 @@ export function BeanBackground({ children, style }: Props) {
           pointerEvents="none" = taps go straight through to the screen above. */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         {LAYOUT.map((spot, i) => (
-          <FloatingBean key={i} spot={spot} index={i} still={reduceMotion} />
+          <FloatingBean key={i} spot={spot} index={i} still={reduceMotion} opacity={beanOpacity} />
         ))}
       </View>
 
@@ -84,7 +87,17 @@ export function BeanBackground({ children, style }: Props) {
 }
 
 // One bean, gently drifting up and down forever.
-function FloatingBean({ spot, index, still }: { spot: (typeof LAYOUT)[number]; index: number; still: boolean }) {
+function FloatingBean({
+  spot,
+  index,
+  still,
+  opacity,
+}: {
+  spot: (typeof LAYOUT)[number];
+  index: number;
+  still: boolean;
+  opacity: number;
+}) {
   // An Animated.Value is a number that can change smoothly over time WITHOUT
   // redrawing the screen each frame. It goes 0 -> 1 -> 0 -> 1 ... and we turn
   // that into "how far up or down" below. useRef keeps the same one between redraws.
@@ -95,7 +108,7 @@ function FloatingBean({ spot, index, still }: { spot: (typeof LAYOUT)[number]; i
 
     // Each bean gets its own speed (5-9 seconds per drift) and starts at a
     // different time, so they don't all bob together like a marching band
-    const duration = 5000 + (index % 5) * 1000;
+    const duration = 4000 + (index % 5) * 1000;
     const ease = Easing.inOut(Easing.sin); // slow at the top and bottom, like floating
 
     const animation = Animated.loop(
@@ -129,7 +142,7 @@ function FloatingBean({ spot, index, still }: { spot: (typeof LAYOUT)[number]; i
         left: `${spot.x}%`,
         top: `${spot.y}%`,
         width: spot.size,
-        opacity: BEAN_OPACITY,
+        opacity,
         // move back by half its size so (x, y) is the bean's CENTRE, drift, then turn it
         transform: [
           { translateX: -spot.size / 2 },

@@ -2,6 +2,7 @@
 // illustration as a compact banner and (from the next steps) suggestions;
 // after searching it shows the café results.
 
+import { BeanBackground } from "@/components/BeanBackground";
 import { ArtBanner } from "@/components/ArtBanner";
 import { ForYou } from "@/components/ForYou";
 import { FriendsCafes } from "@/components/FriendsCafes";
@@ -34,7 +35,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  ImageBackground,
   Keyboard,
   Pressable,
   ScrollView,
@@ -245,11 +245,7 @@ export default function DiscoverScreen() {
 
   // ---------- Search results ----------
   return (
-    <ImageBackground
-      source={require("@/assets/images/background_screen.png")}
-      style={styles.background}
-      resizeMode="cover"
-    >
+    <BeanBackground style={styles.background}>
       <View style={[styles.topArea, { paddingTop: insets.top + 12 }]}>
         <Pressable onPress={clearSearch} style={styles.backButton} accessibilityLabel="Back to Discover">
           <Ionicons name="chevron-back" size={22} color={COLORS.plum} />
@@ -290,7 +286,7 @@ export default function DiscoverScreen() {
           />
         )}
       />
-    </ImageBackground>
+    </BeanBackground>
   );
 }
 

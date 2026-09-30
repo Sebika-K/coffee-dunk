@@ -1,5 +1,6 @@
 // The friends feed: what you and your friends have been drinking, newest first.
 
+import { BeanBackground } from "@/components/BeanBackground";
 import { FeedCard } from "@/components/FeedCard";
 import { COLORS } from "@/constants/theme";
 import { Post } from "@/lib/api";
@@ -13,7 +14,6 @@ import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  ImageBackground,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -144,11 +144,7 @@ export default function FeedScreen() {
   );
 
   return (
-    <ImageBackground
-      source={require("@/assets/images/background_screen.png")}
-      style={styles.background}
-      resizeMode="cover"
-    >
+    <BeanBackground style={styles.background}>
       <FlatList
         data={posts}
         keyExtractor={(post) => post.id}
@@ -169,7 +165,7 @@ export default function FeedScreen() {
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={COLORS.plum} />
         }
       />
-    </ImageBackground>
+    </BeanBackground>
   );
 }
 

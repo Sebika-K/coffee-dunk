@@ -1,3 +1,4 @@
+import { BeanBackground } from "@/components/BeanBackground";
 import { COLORS } from "@/constants/theme";
 import { friendlyError } from "@/lib/authErrors";
 import { useAuth } from "@/lib/AuthContext";
@@ -15,7 +16,6 @@ import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { Link } from "expo-router";
 import { useState } from "react";
 import {
-  ImageBackground,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -93,12 +93,9 @@ export default function SignupScreen() {
     }
   }
 
+  // Full-colour beans here (same as Login): the card sits in the middle, so there's room for them
   return (
-    <ImageBackground
-      source={require("@/assets/images/background_screen.png")}
-      style={styles.background}
-      resizeMode="cover"
-    >
+    <BeanBackground style={styles.background} beanOpacity={1}>
       {/* Tapping anywhere outside a text box closes the keyboard (same as Login) */}
       <Pressable style={styles.tapArea} onPress={Keyboard.dismiss} accessible={false}>
         <KeyboardAvoidingView
@@ -165,7 +162,7 @@ export default function SignupScreen() {
           </View>
         </KeyboardAvoidingView>
       </Pressable>
-    </ImageBackground>
+    </BeanBackground>
   );
 }
 

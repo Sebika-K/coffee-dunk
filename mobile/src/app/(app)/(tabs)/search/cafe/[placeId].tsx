@@ -3,6 +3,7 @@
 // The [placeId] in the file name means this screen works for ANY café -
 // the id comes from the address, e.g. /search/cafe/ChIJOzVa9gSLj4ARFQqljssXWUI
 
+import { BeanBackground } from "@/components/BeanBackground";
 import { CafeInfo } from "@/components/CafeInfo";
 import { PostGrid } from "@/components/PostGrid";
 import { TopDrinks } from "@/components/TopDrinks";
@@ -15,7 +16,6 @@ import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  ImageBackground,
   Pressable,
   StyleSheet,
   Text,
@@ -85,11 +85,7 @@ export default function CafeScreen() {
   );
 
   return (
-    <ImageBackground
-      source={require("@/assets/images/background_screen.png")}
-      style={styles.background}
-      resizeMode="cover"
-    >
+    <BeanBackground style={styles.background}>
       <PostGrid
         posts={posts}
         onPressPost={(post) => router.push({ pathname: "/post/[postId]", params: { postId: post.id } })}
@@ -127,7 +123,7 @@ export default function CafeScreen() {
       >
         <Ionicons name="add" size={30} color="white" />
       </Pressable>
-    </ImageBackground>
+    </BeanBackground>
   );
 }
 

@@ -1,3 +1,4 @@
+import { BeanBackground } from "@/components/BeanBackground";
 import { COLORS } from "@/constants/theme";
 import { friendlyError } from "@/lib/authErrors";
 import { auth } from "@/lib/firebase";
@@ -7,7 +8,6 @@ import { Link } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
-  ImageBackground,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -60,12 +60,9 @@ export default function LoginScreen() {
     }
   }
 
+  // Full-colour beans here: the login card sits in the middle, so there's room for them
   return (
-    <ImageBackground
-      source={require("@/assets/images/background_screen.png")}
-      style={styles.background}
-      resizeMode="cover"
-    >
+    <BeanBackground style={styles.background} beanOpacity={1}>
 
       {/* Tapping anywhere outside a text box closes the keyboard.
           accessible={false} stops screen readers treating the whole screen as one big button. */}
@@ -127,7 +124,7 @@ export default function LoginScreen() {
           </View>
         </KeyboardAvoidingView>
       </Pressable>
-    </ImageBackground>
+    </BeanBackground>
   );
 }
 
