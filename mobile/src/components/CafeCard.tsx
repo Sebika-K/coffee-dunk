@@ -40,9 +40,19 @@ export function CafeCard({ cafe, onPress }: Props) {
       <View style={styles.ratingRow}>
         <Ionicons name="star" size={13} color={COLORS.plum} />
         <Text style={styles.rating}>{cafe.rating ?? "No rating yet"}</Text>
+        {cafe.rating != null && cafe.rating_count ? (
+          <Text style={styles.reviewCount}>· {formatCount(cafe.rating_count)} reviews</Text>
+        ) : null}
       </View>
     </Pressable>
   );
+}
+
+// 950 -> "950", 1234 -> "1.2k", 25000 -> "25k" (short enough for a small card)
+function formatCount(count: number): string {
+  if (count < 1000) return String(count);
+  const thousands = count / 1000;
+  return `${thousands < 10 ? thousands.toFixed(1).replace(".0", "") : Math.round(thousands)}k`;
 }
 
 const styles = StyleSheet.create({
@@ -86,5 +96,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 13,
     color: COLORS.plum,
+  },
+  reviewCount: {
+    fontSize: 13,
+    color: "rgba(125, 46, 77, 0.6)", // same faded plum as the address
   },
 });

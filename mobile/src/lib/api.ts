@@ -26,6 +26,7 @@ export type Cafe = {
   place_id: string;
   address: string | null;
   rating: number | null;
+  rating_count?: number | null; // how many Google reviews the rating is based on
   photo_ref: string | null;
 };
 

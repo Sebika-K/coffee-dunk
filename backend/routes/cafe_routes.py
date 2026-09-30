@@ -3,6 +3,7 @@ import requests
 from flask import Blueprint, request, jsonify, Response
 from .firebase_helpers import get_posts_by_place_id, get_posts_by_user, get_posts_by_drink, get_friend_ids
 from .parsing import parse_coordinates, parse_radius
+from .ranking import sort_top_rated
 from .privacy import visible_posts
 from .drink_stats import top_drinks, favourite_drink, recommend_cafes
 from dotenv import load_dotenv
@@ -67,11 +68,13 @@ def find_cafes_near_point(lat, lng, radius):
             "place_id": place.get("place_id"),
             "address": place.get("vicinity"),
             "rating": place.get("rating"),  # None if the café has no rating yet
+            "rating_count": place.get("user_ratings_total"),  # how many Google reviews
             "photo_ref": photos[0]["photo_reference"] if photos else None,
         })
 
-    # Highest rated first (cafés with no rating go last)
-    cafes.sort(key=lambda c: c["rating"] or 0, reverse=True)
+    # Best first, counting how many reviews each rating is based on
+    # (see ranking.py). Cafés with no rating go last.
+    sort_top_rated(cafes)
     return cafes, None
 
 
