@@ -7,11 +7,13 @@
 //
 // Use it instead of <ImageBackground source={background_screen.png}>:
 //   <BeanBackground style={styles.background}>...screen...</BeanBackground>
+//
+// The beans also float gently up and down, each at its own speed, like bubbles.
 
 import { COLORS } from "@/constants/theme";
 import { Image } from "expo-image";
-import { ReactNode } from "react";
-import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
+import { ReactNode, useEffect, useRef, useState } from "react";
+import { AccessibilityInfo, Animated, Easing, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 
 // Sebika's six hand-drawn beans, and each one's shape (width ÷ height),
 // so they're never stretched
@@ -49,37 +51,96 @@ const LAYOUT = [
 
 const BEAN_OPACITY = 0.35; // how faded the beans are (0 = invisible, 1 = full colour)
 
+const FLOAT_DISTANCE = 8; // how far each bean drifts up and down, in points
+
 type Props = {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
 };
 
 export function BeanBackground({ children, style }: Props) {
+  // Some people turn on "Reduce Motion" in their phone's accessibility settings
+  // because movement makes them feel unwell. If it's on, the beans stay still.
+  const [reduceMotion, setReduceMotion] = useState(false);
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const listener = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduceMotion);
+    return () => listener.remove();
+  }, []);
+
   return (
     <View style={[styles.screen, style]}>
       {/* The bean layer: fills the screen behind everything.
           pointerEvents="none" = taps go straight through to the screen above. */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         {LAYOUT.map((spot, i) => (
-          <Image
-            key={i}
-            source={BEANS[spot.bean].source}
-            style={{
-              position: "absolute",
-              left: `${spot.x}%`,
-              top: `${spot.y}%`,
-              width: spot.size,
-              aspectRatio: BEANS[spot.bean].aspectRatio,
-              opacity: BEAN_OPACITY,
-              // move back by half its size so (x, y) is the bean's CENTRE, then turn it
-              transform: [{ translateX: -spot.size / 2 }, { translateY: -spot.size / 2 }, { rotate: `${spot.rotate}deg` }],
-            }}
-          />
+          <FloatingBean key={i} spot={spot} index={i} still={reduceMotion} />
         ))}
       </View>
 
       {children}
     </View>
+  );
+}
+
+// One bean, gently drifting up and down forever.
+function FloatingBean({ spot, index, still }: { spot: (typeof LAYOUT)[number]; index: number; still: boolean }) {
+  // An Animated.Value is a number that can change smoothly over time WITHOUT
+  // redrawing the screen each frame. It goes 0 -> 1 -> 0 -> 1 ... and we turn
+  // that into "how far up or down" below. useRef keeps the same one between redraws.
+  const progress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (still) return;
+
+    // Each bean gets its own speed (5-9 seconds per drift) and starts at a
+    // different time, so they don't all bob together like a marching band
+    const duration = 5000 + (index % 5) * 1000;
+    const ease = Easing.inOut(Easing.sin); // slow at the top and bottom, like floating
+
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(progress, { toValue: 1, duration, easing: ease, useNativeDriver: true }),
+        Animated.timing(progress, { toValue: 0, duration, easing: ease, useNativeDriver: true }),
+      ])
+    );
+    // useNativeDriver: the phone's graphics system runs the animation itself,
+    // so it stays smooth even while the app is busy (loading, scrolling...)
+    const timer = setTimeout(() => animation.start(), (index * 700) % duration);
+
+    // Leaving the screen: stop, so we don't animate beans nobody can see
+    return () => {
+      clearTimeout(timer);
+      animation.stop();
+    };
+  }, [progress, index, still]);
+
+  // 0 -> 1 becomes "8 points down" -> "8 points up". Odd beans go the other
+  // way, so neighbours move in opposite directions.
+  const drift = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: index % 2 === 0 ? [FLOAT_DISTANCE, -FLOAT_DISTANCE] : [-FLOAT_DISTANCE, FLOAT_DISTANCE],
+  });
+
+  return (
+    <Animated.View
+      style={{
+        position: "absolute",
+        left: `${spot.x}%`,
+        top: `${spot.y}%`,
+        width: spot.size,
+        opacity: BEAN_OPACITY,
+        // move back by half its size so (x, y) is the bean's CENTRE, drift, then turn it
+        transform: [
+          { translateX: -spot.size / 2 },
+          { translateY: -spot.size / 2 },
+          { translateY: drift },
+          { rotate: `${spot.rotate}deg` },
+        ],
+      }}
+    >
+      <Image source={BEANS[spot.bean].source} style={{ width: "100%", aspectRatio: BEANS[spot.bean].aspectRatio }} />
+    </Animated.View>
   );
 }
 
