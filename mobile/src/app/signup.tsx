@@ -3,7 +3,8 @@ import { COLORS } from "@/constants/theme";
 import { friendlyError } from "@/lib/authErrors";
 import { useAuth } from "@/lib/AuthContext";
 import { auth } from "@/lib/firebase";
-import { syncPublicProfile } from "@/lib/users";
+import { openPage, PRIVACY_URL, TERMS_URL } from "@/lib/legal";
+import { recordTermsAccepted, syncPublicProfile } from "@/lib/users";
 import {
   claimUsername,
   isUsernameAvailable,
@@ -13,6 +14,7 @@ import {
 } from "@/lib/usernames";
 import { FirebaseError } from "firebase/app";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { useState } from "react";
 import {
@@ -35,9 +37,12 @@ export default function SignupScreen() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  // Apple requires people to agree to the Terms before posting anything
+  const [agreed, setAgreed] = useState(false);
 
+  // Sign up only works once every box is filled AND the terms are ticked
   const canSubmit =
-    email.trim() !== "" && username.trim() !== "" && password !== "" && !isLoading;
+    email.trim() !== "" && username.trim() !== "" && password !== "" && agreed && !isLoading;
 
   async function handleSignup() {
     setErrorMessage("");
@@ -79,6 +84,7 @@ export default function SignupScreen() {
       // 4) Save the username as the account's display name too
       await updateProfile(result.user, { displayName: name });
       await syncPublicProfile(result.user); // public profile with the chosen username
+      await recordTermsAccepted(result.user.uid); // when they agreed to the terms
       refreshUser(); // show the username right away (not the email)
       // The app moves into the logged-in screens automatically (see _layout.tsx)
     } catch (error) {
@@ -140,6 +146,28 @@ export default function SignupScreen() {
 
             {errorMessage !== "" && <Text style={styles.errorText}>{errorMessage}</Text>}
 
+            {/* "I agree" checkbox. Tapping the row ticks it; tapping the underlined
+                words opens that page instead (a Text inside a Text can have its own onPress). */}
+            <Pressable
+              style={styles.agreeRow}
+              onPress={() => setAgreed(!agreed)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: agreed }}
+              hitSlop={6}
+            >
+              <Ionicons name={agreed ? "checkbox" : "square-outline"} size={22} color="#FFFFFF" />
+              <Text style={styles.agreeText}>
+                I agree to the{" "}
+                <Text style={styles.agreeLink} onPress={() => openPage(TERMS_URL)}>
+                  Terms of Use
+                </Text>{" "}
+                and{" "}
+                <Text style={styles.agreeLink} onPress={() => openPage(PRIVACY_URL)}>
+                  Privacy Policy
+                </Text>
+              </Text>
+            </Pressable>
+
             <Pressable
               onPress={handleSignup}
               disabled={!canSubmit}
@@ -167,6 +195,23 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
+  agreeRow: {
+    flexDirection: "row", // box on the left, sentence on the right
+    alignItems: "flex-start",
+    gap: 10,
+    marginTop: 18,
+  },
+  agreeText: {
+    flex: 1, // let the sentence wrap onto two lines if it needs to
+    color: COLORS.fadedWhite,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  agreeLink: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
   background: {
     flex: 1,
   },

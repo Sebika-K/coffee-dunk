@@ -6,7 +6,7 @@
 
 import { db } from "@/lib/firebase";
 import { User } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { claimUsername } from "@/lib/usernames";
 
 // Everyone's username for display: their chosen name, or the start of their email
@@ -29,6 +29,12 @@ export async function syncPublicProfile(user: User) {
     { ...nameFields, photo_url: user.photoURL ?? null },
     { merge: true }
   );
+}
+
+// Remember WHEN someone agreed to the Terms of Use and Privacy Policy
+// (they tick the box at signup). Useful proof if it's ever needed.
+export async function recordTermsAccepted(uid: string) {
+  await setDoc(doc(db, "users", uid), { terms_accepted_at: serverTimestamp() }, { merge: true });
 }
 
 // Accounts made BEFORE unique usernames have no claim yet. On login, claim
