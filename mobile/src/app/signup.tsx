@@ -16,6 +16,7 @@ import { Link } from "expo-router";
 import { useState } from "react";
 import {
   ImageBackground,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -98,68 +99,72 @@ export default function SignupScreen() {
       style={styles.background}
       resizeMode="cover"
     >
+      {/* Tapping anywhere outside a text box closes the keyboard (same as Login) */}
+      <Pressable style={styles.tapArea} onPress={Keyboard.dismiss} accessible={false}>
+        <KeyboardAvoidingView
+          style={styles.keyboardArea}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View style={styles.card}>
+            <Text style={styles.title}>Create your account</Text>
 
-      <KeyboardAvoidingView
-        style={styles.keyboardArea}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <View style={styles.card}>
-          <TextInput
-            style={[styles.input, styles.firstInput]}
-            placeholder="Email"
-            placeholderTextColor={COLORS.placeholder}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-            value={email}
-            onChangeText={setEmail}
-          />
+            <TextInput
+              style={[styles.input, styles.firstInput]}
+              placeholder="Email"
+              placeholderTextColor={COLORS.placeholder}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              value={email}
+              onChangeText={setEmail}
+            />
 
-          <TextInput
-            style={[styles.input, styles.spacedInput]}
-            placeholder="Username"
-            placeholderTextColor={COLORS.placeholder}
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="username"
-            maxLength={USERNAME_MAX}
-            value={username}
-            onChangeText={setUsername}
-          />
+            <TextInput
+              style={[styles.input, styles.spacedInput]}
+              placeholder="Username"
+              placeholderTextColor={COLORS.placeholder}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="username"
+              maxLength={USERNAME_MAX}
+              value={username}
+              onChangeText={setUsername}
+            />
 
-          <TextInput
-            style={styles.input}
-            placeholder="Password (at least 6 characters)"
-            placeholderTextColor={COLORS.placeholder}
-            secureTextEntry
-            autoComplete="new-password"
-            value={password}
-            onChangeText={setPassword}
-          />
+            <TextInput
+              style={styles.input}
+              placeholder="Password (at least 6 characters)"
+              placeholderTextColor={COLORS.placeholder}
+              secureTextEntry
+              autoComplete="new-password"
+              value={password}
+              onChangeText={setPassword}
+            />
 
-          {errorMessage !== "" && <Text style={styles.errorText}>{errorMessage}</Text>}
+            {errorMessage !== "" && <Text style={styles.errorText}>{errorMessage}</Text>}
 
-          <Pressable
-            onPress={handleSignup}
-            disabled={!canSubmit}
-            style={({ pressed }) => [
-              styles.button,
-              pressed && styles.buttonPressed,
-              !canSubmit && styles.buttonDisabled,
-            ]}
-          >
-            <Text style={styles.buttonText}>{isLoading ? "Creating account…" : "Sign Up"}</Text>
-          </Pressable>
+            <Pressable
+              onPress={handleSignup}
+              disabled={!canSubmit}
+              style={({ pressed }) => [
+                styles.button,
+                pressed && styles.buttonPressed,
+                !canSubmit && styles.buttonDisabled,
+              ]}
+            >
+              <Text style={styles.buttonText}>{isLoading ? "Creating account…" : "Sign up"}</Text>
+            </Pressable>
 
-          <View style={styles.bottomRow}>
-            <Text style={styles.fadedText}>Already have an account? </Text>
-            {/* replace: swap this screen for Login instead of stacking on top */}
-            <Link href="/login" replace>
-              <Text style={styles.linkText}>Login</Text>
-            </Link>
+            <View style={styles.bottomRow}>
+              <Text style={styles.fadedText}>Already have an account? </Text>
+              {/* replace: swap this screen for Login instead of stacking on top */}
+              <Link href="/login" replace>
+                <Text style={styles.linkText}>Log in</Text>
+              </Link>
+            </View>
           </View>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </Pressable>
     </ImageBackground>
   );
 }
@@ -167,6 +172,9 @@ export default function SignupScreen() {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
+  },
+  tapArea: {
+    flex: 1, // cover the whole screen so a tap anywhere counts
   },
   keyboardArea: {
     flex: 1,
@@ -177,22 +185,29 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.plum,
     width: "85%",
     maxWidth: 340,
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 16,
+    padding: 24,
+  },
+  title: {
+    color: "#FFFFFF",
+    fontSize: 24,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 24,
   },
   input: {
     height: 48,
+    borderRadius: 12, // rounded to match the card
     backgroundColor: COLORS.sand,
     paddingHorizontal: 12,
     fontSize: 16,
     color: COLORS.plum,
   },
   firstInput: {
-    marginTop: 30,
-    marginBottom: 20,
+    marginBottom: 14,
   },
   spacedInput: {
-    marginBottom: 20,
+    marginBottom: 14,
   },
   errorText: {
     color: COLORS.error,
@@ -200,39 +215,38 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   button: {
-    alignSelf: "center",
-    minWidth: 122,
-    paddingHorizontal: 12,
-    height: 44,
-    marginTop: 25,
-    borderWidth: 1,
-    borderColor: COLORS.sand,
+    height: 52, // full width of the card, pill shaped (same as Login)
+    borderRadius: 26,
+    marginTop: 24,
+    backgroundColor: COLORS.cream,
     justifyContent: "center",
     alignItems: "center",
   },
   buttonPressed: {
-    backgroundColor: "rgba(216, 208, 203, 0.15)",
+    opacity: 0.8,
   },
   buttonDisabled: {
-    opacity: 0.4,
+    opacity: 0.5, // faded until every field is filled in
   },
   buttonText: {
-    color: COLORS.fadedWhite,
-    fontSize: 18,
+    color: COLORS.plum,
+    fontSize: 17,
+    fontWeight: "600",
   },
   bottomRow: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 25,
+    marginTop: 20,
   },
   fadedText: {
     color: COLORS.fadedWhite,
     fontSize: 15,
   },
   linkText: {
-    color: COLORS.link,
+    color: "#FFFFFF", // readable on plum (the old bright blue clashed)
     fontSize: 14,
+    fontWeight: "600",
     textDecorationLine: "underline",
   },
 });
