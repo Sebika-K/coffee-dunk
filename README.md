@@ -15,14 +15,18 @@ Log every cup, see what your friends are drinking, and find cafes worth the trip
 
 <table align="center">
   <tr>
-    <td align="center"><img src="docs/screenshots/landing.jpg" width="220" alt="Landing screen" /><br/><sub>Welcome</sub></td>
-    <td align="center"><img src="docs/screenshots/feed.jpg" width="220" alt="Friends feed" /><br/><sub>Friends' coffee feed</sub></td>
-    <td align="center"><img src="docs/screenshots/profile.jpg" width="220" alt="Profile with coffee diary" /><br/><sub>Profile & coffee diary</sub></td>
+    <td align="center"><img src="docs/screenshots/landing.jpg" width="200" alt="Landing screen" /><br/><sub>Welcome</sub></td>
+    <td align="center"><img src="docs/screenshots/login.jpg" width="200" alt="Log in screen with floating beans" /><br/><sub>Log in</sub></td>
+    <td align="center"><img src="docs/screenshots/feed.jpg" width="200" alt="Friends feed" /><br/><sub>Friends' coffee feed</sub></td>
+    <td align="center"><img src="docs/screenshots/profile.jpg" width="200" alt="Profile with coffee diary" /><br/><sub>Profile & coffee diary</sub></td>
   </tr>
+</table>
+
+<table align="center">
   <tr>
-    <td align="center"><img src="docs/screenshots/discover.jpg" width="220" alt="Discover cafés" /><br/><sub>Discover cafés</sub></td>
-    <td align="center"><img src="docs/screenshots/cafe.jpg" width="220" alt="Café page" /><br/><sub>Café page</sub></td>
-    <td align="center"><img src="docs/screenshots/new-post.jpg" width="220" alt="New post" /><br/><sub>Log a coffee</sub></td>
+    <td align="center"><img src="docs/screenshots/discover.jpg" width="200" alt="Discover cafés" /><br/><sub>Discover cafés</sub></td>
+    <td align="center"><img src="docs/screenshots/cafe.jpg" width="200" alt="Café page" /><br/><sub>Café page</sub></td>
+    <td align="center"><img src="docs/screenshots/new-post.jpg" width="200" alt="New post" /><br/><sub>Log a coffee</sub></td>
   </tr>
 </table>
 
