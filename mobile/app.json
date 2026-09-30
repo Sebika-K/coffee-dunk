@@ -6,9 +6,14 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "coffeedunk",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "bundleIdentifier": "com.skcoffeedunk.app",
+      "supportsTablet": false,
+      "icon": "./assets/expo.icon",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +22,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.skcoffeedunk.app"
     },
     "web": {
       "output": "static",
@@ -43,7 +49,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow Coffee Dunk to use your location to find caf\u00e9s near you."
+          "locationWhenInUsePermission": "Allow Coffee Dunk to use your location to find cafés near you."
         }
       ]
     ],
