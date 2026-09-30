@@ -2,6 +2,7 @@
 // rating, café, caption. Replaces the old popup - there's more room here,
 // and every post has its own address: /post/<postId>
 
+import { DoubleTapHeart } from "@/components/DoubleTapHeart";
 import { LikeButton } from "@/components/LikeButton";
 import { LikedByList } from "@/components/LikedByList";
 import { RecipeCard } from "@/components/RecipeCard";
@@ -175,16 +176,32 @@ export default function PostScreen() {
         <Text style={styles.message}>{errorMessage}</Text>
       ) : (
         <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}>
-          <Image
-            source={
-              post.image_url
-                ? { uri: post.image_url }
-                : require("@/assets/images/cafe-placeholder.jpg")
-            }
-            style={styles.photo}
-            contentFit="cover"
-            transition={200}
-          />
+          {/* Friend's post: double-tap the photo to like it (only likes, never unlikes) */}
+          {isMine ? (
+            <Image
+              source={
+                post.image_url
+                  ? { uri: post.image_url }
+                  : require("@/assets/images/cafe-placeholder.jpg")
+              }
+              style={styles.photo}
+              contentFit="cover"
+              transition={200}
+            />
+          ) : (
+            <DoubleTapHeart onDoubleTap={() => !isLiked && toggleLike()}>
+              <Image
+                source={
+                  post.image_url
+                    ? { uri: post.image_url }
+                    : require("@/assets/images/cafe-placeholder.jpg")
+                }
+                style={styles.photo}
+                contentFit="cover"
+                transition={200}
+              />
+            </DoubleTapHeart>
+          )}
 
           {/* Friend's post: ❤️ on the left, 🔖 on the right, like Instagram */}
           {!isMine && (

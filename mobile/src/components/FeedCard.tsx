@@ -1,5 +1,6 @@
 // One post in the friends feed: photo first, then who / what / where.
 
+import { DoubleTapHeart } from "@/components/DoubleTapHeart";
 import { LikeButton } from "@/components/LikeButton";
 import { SaveButton } from "@/components/SaveButton";
 import { StarRating } from "@/components/StarRating";
@@ -60,15 +61,34 @@ export function FeedCard({
         {post.created_at && <Text style={styles.time}>{formatTimeAgo(post.created_at)}</Text>}
       </Pressable>
 
-      {/* The coffee */}
-      <Image
-        source={
-          post.image_url ? { uri: post.image_url } : require("@/assets/images/cafe-placeholder.jpg")
-        }
-        style={styles.photo}
-        contentFit="cover"
-        transition={200}
-      />
+      {/* The coffee. Friends' posts: double-tap to like, single tap opens the post.
+          (Your own posts: just the photo - taps go to the card and open the post.) */}
+      {onToggleLike ? (
+        <DoubleTapHeart
+          onDoubleTap={() => {
+            if (!isLiked) onToggleLike(); // double-tap only LIKES, never unlikes
+          }}
+          onSingleTap={openPost}
+        >
+          <Image
+            source={
+              post.image_url ? { uri: post.image_url } : require("@/assets/images/cafe-placeholder.jpg")
+            }
+            style={styles.photo}
+            contentFit="cover"
+            transition={200}
+          />
+        </DoubleTapHeart>
+      ) : (
+        <Image
+          source={
+            post.image_url ? { uri: post.image_url } : require("@/assets/images/cafe-placeholder.jpg")
+          }
+          style={styles.photo}
+          contentFit="cover"
+          transition={200}
+        />
+      )}
 
       {/* Actions, like Instagram: ❤️ on the left, 🔖 on the right */}
       {(onToggleLike || onToggleSave) && (
